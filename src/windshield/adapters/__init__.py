@@ -2,6 +2,7 @@
 
 from windshield.adapters._factory import create_page
 from windshield.adapters._protocol import (
+    DEFAULT_ROTATION_ORDER,
     BackendType,
     LocatorAdapter,
     PageAdapter,
@@ -10,6 +11,7 @@ from windshield.adapters._protocol import (
 
 __all__ = [
     "BackendType",
+    "DEFAULT_ROTATION_ORDER",
     "LocatorAdapter",
     "PageAdapter",
     "UnsupportedOperationError",

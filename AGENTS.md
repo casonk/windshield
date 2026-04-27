@@ -2,7 +2,7 @@
 
 ## Objective
 
-Windshield is a reusable Playwright browser automation utility library. It provides generic helpers for Chrome management, page interaction, debug snapshots, challenge detection, stealth/user-agent rotation, and HTTP utilities.
+Windshield is a reusable multi-backend browser automation utility library. It provides generic helpers for Chrome management, page interaction, debug snapshots, challenge detection, stealth/user-agent rotation, and HTTP utilities. Supported backends: Playwright, Selenium, undetected-chromedriver, and HTTP-only (requests + BeautifulSoup). Includes automatic backend rotation with privacy-first ordering (least detectable first) and block-aware fallback.
 
 ## Portfolio Standards
 
@@ -25,7 +25,7 @@ Available shared repos in the portfolio:
 
 ## Scope Boundaries
 
-- **IN scope**: Generic Playwright browser automation utilities (provider-agnostic)
+- **IN scope**: Generic browser automation utilities (provider-agnostic) — multi-backend adapters (Playwright, Selenium, undetected-chromedriver, HTTP-only), backend rotation strategy, Chrome management, page interaction, debug snapshots, challenge detection, stealth helpers
 - **OUT of scope**: Credential management (use auto-pass), OTP/messaging (use shock-relay), provider-specific scraping logic, financial data parsing
 
 ## Development Rules

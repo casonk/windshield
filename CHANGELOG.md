@@ -1,5 +1,19 @@
 # CHANGELOG.md
 
+## [0.2.0] — Unreleased
+
+### Added
+- Multi-backend adapter layer (`windshield.adapters`)
+  - `PlaywrightPageAdapter` — thin wrapper for Playwright sync pages
+  - `SeleniumPageAdapter` — Selenium WebDriver with stale-element retry
+  - `UndetectedChromePageAdapter` — anti-detection via undetected-chromedriver
+  - `HttpPageAdapter` — requests + BeautifulSoup for static pages
+- `create_page()` factory function for backend-agnostic browser creation
+- `RotationStrategy` for automatic backend fallback on detection/blocking
+- `BackendType` enum, `PageAdapter`/`LocatorAdapter` protocols
+- `UnsupportedOperationError` for operations unsupported by a backend
+- Optional dependency groups in pyproject.toml
+
 ## [0.1.0] — 2026-04-26
 
 ### Added

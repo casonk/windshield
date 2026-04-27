@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 
 def snapshot_safe_name(value: str) -> str:
@@ -258,6 +259,6 @@ def install_page_runtime_debug_capture(
     except Exception:  # pylint: disable=broad-except
         pass
     try:
-        setattr(page, "_windshield_runtime_debug_capture_installed", True)
+        page._windshield_runtime_debug_capture_installed = True
     except Exception:  # pylint: disable=broad-except
         pass

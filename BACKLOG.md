@@ -13,6 +13,11 @@ Mark items `[x]` when complete and move them to Done.
 - [manual:2026-04-26] Add Playwright stealth script injection helper
 - [manual:2026-04-26] Add architecture diagrams via archility
 - [manual:2026-04-26] Consider adding async Playwright (async_api) support alongside sync_api
+- [manual:2026-07-23] Playwright async API support for adapter layer
+- [manual:2026-07-23] CDP-based event capture for Selenium/UC backends
+- [manual:2026-07-23] Integration tests with real browsers (needs CI with browser setup)
+- [manual:2026-07-23] Profile manager for managing multiple Chrome profiles
+- [manual:2026-07-23] Cookie/session state serialization across backends
 
 ## In Progress
 

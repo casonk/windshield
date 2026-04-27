@@ -19,8 +19,17 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
+playwright = ["playwright"]
+selenium = ["selenium"]
+undetected = ["undetected-chromedriver"]
+http = ["requests", "beautifulsoup4"]
+all = ["playwright", "selenium", "undetected-chromedriver", "requests", "beautifulsoup4"]
 dev = [
     "pytest>=8",
+    "ruff",
+    "black",
+    "beautifulsoup4",
+    "requests",
     "dyno_lab @ git+https://github.com/casonk/dyno-lab.git",
 ]
 

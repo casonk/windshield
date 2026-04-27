@@ -4,12 +4,11 @@ from __future__ import annotations
 
 import re
 import time
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
-from windshield._errors import WindshieldError
 from windshield.page import (
     first_visible_selector_match,
-    has_any_selector,
     is_page_or_context_closed_error,
     page_contains_any_text,
     read_page_text,

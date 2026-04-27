@@ -1,6 +1,13 @@
 """Windshield — reusable Playwright browser automation utilities."""
 
 from windshield._errors import WindshieldError
+from windshield.adapters import (
+    BackendType,
+    LocatorAdapter,
+    PageAdapter,
+    UnsupportedOperationError,
+    create_page,
+)
 from windshield.browser import (
     chrome_executable_from_dir,
     discover_chrome_binary,
@@ -70,6 +77,7 @@ from windshield.page import (
     wait_for_text_to_disappear,
     wait_for_url_contains,
 )
+from windshield.rotation import RotationStrategy
 from windshield.stealth import (
     DEFAULT_STEALTH_USER_AGENTS,
     normalize_selector_list,
@@ -79,6 +87,14 @@ from windshield.stealth import (
 
 __all__ = [
     "WindshieldError",
+    # adapters
+    "BackendType",
+    "LocatorAdapter",
+    "PageAdapter",
+    "UnsupportedOperationError",
+    "create_page",
+    # rotation
+    "RotationStrategy",
     # browser
     "chrome_executable_from_dir",
     "discover_chrome_binary",

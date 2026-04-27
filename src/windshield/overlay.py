@@ -368,8 +368,7 @@ def wait_for_manual_continue(
             )
 
         can_prompt_terminal = (
-            bool(hasattr(sys.stdin, "isatty") and getattr(sys.stdin, "isatty")())
-            and terminal_prompt_enabled
+            bool(hasattr(sys.stdin, "isatty") and sys.stdin.isatty()) and terminal_prompt_enabled
         )
         select_module = None
         if can_prompt_terminal:

@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "windshield"
+version = "0.1.0"
+description = "Reusable Playwright browser automation utilities — Chrome management, page interaction, debugging, challenge detection, and stealth helpers."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "Cason Konzer" },
+]
+keywords = ["playwright", "browser", "automation", "chrome", "cdp", "testing"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Operating System :: OS Independent",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "dyno_lab @ git+https://github.com/casonk/dyno-lab.git",
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = [
+    "E501",   # line-too-long — handled by formatter
+    "B008",   # function-call in default args — too noisy for existing code
+    "SIM108", # ternary instead of if/else — too aggressive for readability
+    "SIM117", # nested with statements — common pattern in tests, keep for readability
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]

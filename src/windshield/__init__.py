@@ -2,6 +2,7 @@
 
 from windshield._errors import WindshieldError
 from windshield.adapters import (
+    DEFAULT_ROTATION_ORDER,
     BackendType,
     LocatorAdapter,
     PageAdapter,
@@ -89,6 +90,7 @@ __all__ = [
     "WindshieldError",
     # adapters
     "BackendType",
+    "DEFAULT_ROTATION_ORDER",
     "LocatorAdapter",
     "PageAdapter",
     "UnsupportedOperationError",

@@ -8,12 +8,24 @@ from typing import Any, Protocol, runtime_checkable
 
 
 class BackendType(enum.Enum):
-    """Supported browser automation backends."""
+    """Supported browser automation backends.
 
-    PLAYWRIGHT = "playwright"
-    SELENIUM = "selenium"
+    Listed in privacy-descending order: most private (least detectable) first.
+    """
+
     UNDETECTED = "undetected"
     HTTP = "http"
+    PLAYWRIGHT = "playwright"
+    SELENIUM = "selenium"
+
+
+# Default rotation order — most private first, downgrade only when blocked.
+DEFAULT_ROTATION_ORDER: list[BackendType] = [
+    BackendType.UNDETECTED,
+    BackendType.HTTP,
+    BackendType.PLAYWRIGHT,
+    BackendType.SELENIUM,
+]
 
 
 class UnsupportedOperationError(Exception):

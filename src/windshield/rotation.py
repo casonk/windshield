@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from windshield.adapters._factory import create_page
-from windshield.adapters._protocol import BackendType, PageAdapter
+from windshield.adapters._protocol import DEFAULT_ROTATION_ORDER, BackendType, PageAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -25,23 +25,28 @@ class BlockEvent:
 class RotationStrategy:
     """Manage browser backend rotation with block tracking and cooldown.
 
+    Backends are tried in privacy-descending order by default: the most
+    private (least detectable) backend is used first, and the strategy only
+    downgrades to a more detectable backend when the current one is blocked.
+
+    Default order::
+
+        undetected → http → playwright → selenium
+
     Usage::
 
-        strategy = RotationStrategy(
-            backends=[BackendType.UNDETECTED, BackendType.PLAYWRIGHT, BackendType.SELENIUM],
-            cooldown_seconds=300,
-        )
+        strategy = RotationStrategy()  # uses default privacy-first order
 
-        # Get next available backend
+        # Get next available backend (starts with undetected)
         backend = strategy.next_backend()
         page = create_page(backend, profile_dir="/path/to/profile")
 
-        # If it gets blocked, report it and try next
+        # If it gets blocked, report and downgrade
         strategy.report_block(backend, reason="CAPTCHA detected")
-        backend = strategy.next_backend()
+        backend = strategy.next_backend()  # now returns http or playwright
         page = create_page(backend)
 
-        # On success, report it to boost priority
+        # On success, clear block history so it returns to the top
         strategy.report_success(backend)
     """
 
@@ -52,12 +57,7 @@ class RotationStrategy:
         max_blocks_before_cooldown: int = 1,
     ) -> None:
         if backends is None:
-            backends = [
-                BackendType.UNDETECTED,
-                BackendType.PLAYWRIGHT,
-                BackendType.SELENIUM,
-                BackendType.HTTP,
-            ]
+            backends = list(DEFAULT_ROTATION_ORDER)
         self._backends = [BackendType(b) if isinstance(b, str) else b for b in backends]
         self._cooldown_seconds = cooldown_seconds
         self._max_blocks = max_blocks_before_cooldown

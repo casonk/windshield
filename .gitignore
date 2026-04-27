@@ -1,0 +1,29 @@
+# Local-only session & agent files
+CHATHISTORY.md
+REFS-LOCAL.md
+.codex
+.tachometer/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+dist/
+build/
+*.whl
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+*.env.local

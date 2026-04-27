@@ -2,15 +2,10 @@
 
 from __future__ import annotations
 
-import json
-import tempfile
 import zipfile
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
-
-from windshield._errors import WindshieldError
 from windshield.browser import (
     chrome_executable_from_dir,
     discover_chrome_binary,

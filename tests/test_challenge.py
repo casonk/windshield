@@ -8,7 +8,6 @@ from windshield.challenge import (
     extract_reference_code_from_text,
     is_challenge_page,
 )
-from windshield.page import read_page_text
 
 
 class FakeLocator:
@@ -19,7 +18,7 @@ class FakeLocator:
     def count(self) -> int:
         return self._count
 
-    def nth(self, idx: int) -> "FakeLocator":
+    def nth(self, idx: int) -> FakeLocator:
         return self
 
     def is_visible(self) -> bool:
@@ -64,7 +63,7 @@ class FakeBodyLocator:
     def count(self) -> int:
         return 1
 
-    def nth(self, idx: int) -> "FakeBodyLocator":
+    def nth(self, idx: int) -> FakeBodyLocator:
         return self
 
 

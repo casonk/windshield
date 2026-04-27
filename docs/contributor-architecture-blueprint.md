@@ -44,6 +44,37 @@ Downstream consumer (e.g. private-repository)
     └── windshield.http      → Direct HTTP requests alongside browser
 ```
 
+## Adapter Layer
+
+The adapter layer (`windshield/adapters/`) provides a unified interface across
+browser backends. All adapters implement the `PageAdapter` protocol, which
+models Playwright's sync Page API.
+
+### Module Layout
+
+```
+adapters/
+  __init__.py       # Public exports: create_page, BackendType, etc.
+  _protocol.py      # PageAdapter & LocatorAdapter protocols
+  _playwright.py    # Thin Playwright wrapper
+  _selenium.py      # Selenium with retry logic
+  _undetected.py    # Extends Selenium for undetected-chromedriver
+  _http.py          # requests + BeautifulSoup
+  _factory.py       # create_page() factory
+rotation.py         # RotationStrategy for backend fallback
+```
+
+### Design Decisions
+
+- **Playwright as reference API**: The protocol models Playwright's sync API
+  because it's the most ergonomic. Other backends adapt to match.
+- **Lazy imports**: All backend-specific imports are lazy so windshield can
+  be installed without any browser backend.
+- **Duck typing preserved**: Existing functions accept `page: Any`, so raw
+  Playwright pages still work without wrapping.
+- **Stale element retry**: The Selenium adapter retries operations that fail
+  with `StaleElementReferenceException` (up to 3 attempts).
+
 ## Design Decisions
 
 1. **Playwright sync_api only** — All page interaction uses Playwright's synchronous API. Async support is a future backlog item.

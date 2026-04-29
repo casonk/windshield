@@ -1,0 +1,204 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" modified="agent-authored-for-archility" agent="Codex GPT-5" version="24.7.17" type="device" compressed="false">
+  <diagram id="repo-architecture" name="Repo Architecture">
+    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0" keepEdgesInForeground="1" keepEdgesInBackground="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" value="archility Repository Architecture" style="rounded=0;whiteSpace=wrap;html=0;fillColor=#1F2937;strokeColor=#111827;fontColor=#FFFFFF;fontSize=26;fontStyle=1;align=center;verticalAlign=middle;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="1520" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="10" value="Portfolio Maintainer or AI Agent&#10;invokes repo lifecycle" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#FCE7F3;strokeColor=#DB2777;fontColor=#111827;fontSize=18;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="60" y="150" width="260" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="20" value="CLI Surface&#10;src/archility/cli.py&#10;src/archility/__main__.py&#10;audit | generate | render" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#DBEAFE;strokeColor=#2563EB;fontColor=#111827;fontSize=18;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="380" y="145" width="330" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="30" value="Reference Docs&#10;README.md&#10;docs/contributor-architecture-blueprint.md&#10;docs/portfolio-architecture-toolchain.md&#10;docs/diagrams/archility-audit-flow.puml" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E2E8F0;strokeColor=#64748B;fontColor=#111827;fontSize=17;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="760" y="135" width="360" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="40" value="Shared Toolchain Bootstrap&#10;setup.sh&#10;tools/bin/plantuml&#10;tools/bin/drawio&#10;tools/bin/dot (optional)" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#FDE68A;strokeColor=#D97706;fontColor=#111827;fontSize=18;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1170" y="145" width="330" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="100" value="Inspection Layer&#10;src/archility/audit.py&#10;RepoAudit model&#10;text and JSON reports" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E0F2FE;strokeColor=#0284C7;fontColor=#111827;fontSize=18;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="80" y="360" width="280" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="110" value="Programmatic Scaffolding&#10;src/archility/generate.py&#10;deterministic starter blueprint&#10;and diagram-source generation" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#DCFCE7;strokeColor=#16A34A;fontColor=#111827;fontSize=18;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="420" y="350" width="330" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="120" value="Render Orchestration&#10;src/archility/render.py&#10;shared render plan&#10;and execution" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#FCE7F3;strokeColor=#DB2777;fontColor=#111827;fontSize=18;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="810" y="360" width="300" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="130" value="Agentic Authoring Path&#10;full repository inspection&#10;non-deterministic rewrite or extension" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#FEF3C7;strokeColor=#D97706;fontColor=#111827;fontSize=18;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1170" y="360" width="330" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="200" value="Audit Reports&#10;baseline coverage&#10;toolchain hints&#10;next-step recommendations" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E0E7FF;strokeColor=#4F46E5;fontColor=#111827;fontSize=18;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="60" y="610" width="300" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="210" value="Source Artifacts In Target Repo&#10;docs/contributor-architecture-blueprint.md&#10;repo-architecture.puml&#10;repo-architecture.drawio" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#ECFCCB;strokeColor=#65A30D;fontColor=#111827;fontSize=18;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="430" y="590" width="400" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="220" value="Rendered Artifacts In Target Repo&#10;repo-architecture.puml.svg and .png&#10;repo-architecture.drawio.svg and .png" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#FBCFE8;strokeColor=#BE185D;fontColor=#111827;fontSize=18;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="890" y="610" width="380" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="230" value="Validation Surface&#10;tests/test_audit.py&#10;tests/test_generate.py&#10;tests/test_render.py&#10;.github/workflows/ci.yml" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#DDD6FE;strokeColor=#7C3AED;fontColor=#111827;fontSize=18;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1300" y="600" width="240" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="500" style="rounded=0;html=0;strokeColor=#1F2937;edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=12;endArrow=classic;endFill=1;endSize=10;strokeWidth=2;jumpStyle=arc;jumpSize=10;" edge="1" parent="1" source="10" target="20">
+          <mxGeometry relative="1" as="geometry" archilityManagedRoute="1">
+            <Array as="points">
+              <mxPoint x="344" y="190" />
+              <mxPoint x="344" y="205" />
+              <mxPoint x="356" y="205" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="501" style="rounded=0;html=0;strokeColor=#1F2937;edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=12;endArrow=classic;endFill=1;endSize=10;strokeWidth=2;jumpStyle=arc;jumpSize=10;" edge="1" parent="1" source="10" target="130">
+          <mxGeometry relative="1" as="geometry" archilityManagedRoute="1">
+            <Array as="points">
+              <mxPoint x="344" y="210" />
+              <mxPoint x="344" y="312.5" />
+              <mxPoint x="1146" y="312.5" />
+              <mxPoint x="1146" y="425" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="502" style="rounded=0;html=0;strokeColor=#1F2937;edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=12;endArrow=classic;endFill=1;endSize=10;strokeWidth=2;jumpStyle=arc;jumpSize=10;" edge="1" parent="1" source="30" target="20">
+          <mxGeometry relative="1" as="geometry" archilityManagedRoute="1">
+            <Array as="points">
+              <mxPoint x="736" y="205" />
+              <mxPoint x="736" y="240" />
+              <mxPoint x="734" y="240" />
+              <mxPoint x="734" y="205" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="503" style="rounded=0;html=0;strokeColor=#1F2937;edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=12;endArrow=classic;endFill=1;endSize=10;strokeWidth=2;jumpStyle=arc;jumpSize=10;" edge="1" parent="1" source="20" target="100">
+          <mxGeometry relative="1" as="geometry" archilityManagedRoute="1">
+            <Array as="points">
+              <mxPoint x="420" y="289" />
+              <mxPoint x="220" y="289" />
+              <mxPoint x="220" y="336" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="504" style="rounded=0;html=0;strokeColor=#1F2937;edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=12;endArrow=classic;endFill=1;endSize=10;strokeWidth=2;jumpStyle=arc;jumpSize=10;" edge="1" parent="1" source="20" target="110">
+          <mxGeometry relative="1" as="geometry" archilityManagedRoute="1">
+            <Array as="points">
+              <mxPoint x="670" y="289" />
+              <mxPoint x="545" y="289" />
+              <mxPoint x="545" y="326" />
+              <mxPoint x="585" y="326" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="505" style="rounded=0;html=0;strokeColor=#1F2937;edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=12;endArrow=classic;endFill=1;endSize=10;strokeWidth=2;jumpStyle=arc;jumpSize=10;" edge="1" parent="1" source="20" target="120">
+          <mxGeometry relative="1" as="geometry" archilityManagedRoute="1">
+            <Array as="points">
+              <mxPoint x="734" y="205" />
+              <mxPoint x="734" y="532" />
+              <mxPoint x="786" y="532" />
+              <mxPoint x="786" y="425" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="506" style="rounded=0;html=0;strokeColor=#1F2937;edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=12;endArrow=classic;endFill=1;endSize=10;strokeWidth=2;jumpStyle=arc;jumpSize=10;" edge="1" parent="1" source="100" target="200">
+          <mxGeometry relative="1" as="geometry" archilityManagedRoute="1">
+            <Array as="points">
+              <mxPoint x="120" y="514" />
+              <mxPoint x="185" y="514" />
+              <mxPoint x="185" y="586" />
+              <mxPoint x="210" y="586" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="507" value="inspect existing assets" style="rounded=0;html=0;strokeColor=#1F2937;edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=12;endArrow=classic;endFill=1;endSize=10;strokeWidth=2;fontSize=14;jumpStyle=arc;jumpSize=10;" edge="1" parent="1" source="100" target="210">
+          <mxGeometry relative="1" as="geometry" archilityManagedRoute="1">
+            <Array as="points">
+              <mxPoint x="320" y="514" />
+              <mxPoint x="393.5" y="514" />
+              <mxPoint x="393.5" y="566" />
+              <mxPoint x="470" y="566" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="508" style="rounded=0;html=0;strokeColor=#1F2937;edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=12;endArrow=classic;endFill=1;endSize=10;strokeWidth=2;jumpStyle=arc;jumpSize=10;" edge="1" parent="1" source="110" target="210">
+          <mxGeometry relative="1" as="geometry" archilityManagedRoute="1">
+            <Array as="points">
+              <mxPoint x="585" y="524" />
+              <mxPoint x="411.5" y="524" />
+              <mxPoint x="411.5" y="566" />
+              <mxPoint x="790" y="566" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="509" style="rounded=0;html=0;strokeColor=#1F2937;edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=12;endArrow=classic;endFill=1;endSize=10;strokeWidth=2;jumpStyle=arc;jumpSize=10;" edge="1" parent="1" source="130" target="210">
+          <mxGeometry relative="1" as="geometry" archilityManagedRoute="1">
+            <Array as="points">
+              <mxPoint x="1146" y="425" />
+              <mxPoint x="1146" y="567" />
+              <mxPoint x="854" y="567" />
+              <mxPoint x="854" y="670" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="510" value="shared source layout" style="rounded=0;html=0;strokeColor=#1F2937;edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=12;endArrow=classic;endFill=1;endSize=10;strokeWidth=2;fontSize=14;jumpStyle=arc;jumpSize=10;" edge="1" parent="1" source="210" target="120">
+          <mxGeometry relative="1" as="geometry" archilityManagedRoute="1">
+            <Array as="points">
+              <mxPoint x="630" y="566" />
+              <mxPoint x="960" y="566" />
+              <mxPoint x="960" y="514" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="511" style="rounded=0;html=0;strokeColor=#1F2937;edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=12;endArrow=classic;endFill=1;endSize=10;strokeWidth=2;jumpStyle=arc;jumpSize=10;" edge="1" parent="1" source="40" target="120">
+          <mxGeometry relative="1" as="geometry" archilityManagedRoute="1">
+            <Array as="points">
+              <mxPoint x="1335" y="289" />
+              <mxPoint x="1335" y="336" />
+              <mxPoint x="960" y="336" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="512" style="rounded=0;html=0;strokeColor=#1F2937;edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=12;endArrow=classic;endFill=1;endSize=10;strokeWidth=2;jumpStyle=arc;jumpSize=10;" edge="1" parent="1" source="120" target="220">
+          <mxGeometry relative="1" as="geometry" archilityManagedRoute="1">
+            <Array as="points">
+              <mxPoint x="960" y="514" />
+              <mxPoint x="1080" y="514" />
+              <mxPoint x="1080" y="586" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="513" style="rounded=0;html=0;strokeColor=#1F2937;edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=12;endArrow=classic;endFill=1;endSize=10;strokeWidth=2;jumpStyle=arc;jumpSize=10;" edge="1" parent="1" source="230" target="100">
+          <mxGeometry relative="1" as="geometry" archilityManagedRoute="1">
+            <Array as="points">
+              <mxPoint x="1276" y="640" />
+              <mxPoint x="1276" y="782" />
+              <mxPoint x="384" y="782" />
+              <mxPoint x="384" y="425" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="514" style="rounded=0;html=0;strokeColor=#1F2937;edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=12;endArrow=classic;endFill=1;endSize=10;strokeWidth=2;jumpStyle=arc;jumpSize=10;" edge="1" parent="1" source="230" target="110">
+          <mxGeometry relative="1" as="geometry" archilityManagedRoute="1">
+            <Array as="points">
+              <mxPoint x="1276" y="675" />
+              <mxPoint x="1276" y="-12" />
+              <mxPoint x="774" y="-12" />
+              <mxPoint x="774" y="425" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="515" style="rounded=0;html=0;strokeColor=#1F2937;edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=12;endArrow=classic;endFill=1;endSize=10;strokeWidth=2;jumpStyle=arc;jumpSize=10;" edge="1" parent="1" source="230" target="120">
+          <mxGeometry relative="1" as="geometry" archilityManagedRoute="1">
+            <Array as="points">
+              <mxPoint x="1276" y="710" />
+              <mxPoint x="1276" y="425" />
+              <mxPoint x="1134" y="425" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

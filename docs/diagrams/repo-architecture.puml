@@ -1,0 +1,37 @@
+@startuml
+!pragma layout smetana
+title windshield Repository Architecture
+skinparam shadowing false
+skinparam defaultFontName Monospace
+skinparam packageStyle rectangle
+skinparam linetype ortho
+
+actor "Caller\nor Automation Script" as caller
+
+package "Public Package Surface" #F8FAFC {
+  rectangle "Entry Point\nsrc/windshield/__init__.py\nre-exports public helpers" as entrypoint #DBEAFE
+}
+
+package "Core Modules" #F8FAFC {
+  rectangle "Chrome Management\nsrc/windshield/chrome.py\nbinary discovery, version\nand launch helpers" as chrome #E0F2FE
+  rectangle "Page Interaction\nsrc/windshield/page.py\nclick, fill, wait,\nscreenshot utilities" as page #DCFCE7
+  rectangle "Challenge Detection\nsrc/windshield/challenge.py\nCAPTCHA / bot-check\ndetection helpers" as challenge #FEF3C7
+  rectangle "Stealth Helpers\nsrc/windshield/stealth.py\nfingerprint evasion\nand header injection" as stealth #FCE7F3
+  rectangle "Debugging\nsrc/windshield/debug.py\nlogging, trace, and\nDOM capture utilities" as debug #FDE68A
+}
+
+package "Validation And Contributor Surface" #F8FAFC {
+  rectangle "Test Suite\ntests/\npytest + dyno-lab fixtures" as tests #E2E8F0
+  rectangle "CI\n.github/workflows/ci.yml\npre-commit hooks" as ci #DDD6FE
+  rectangle "Docs\ndocs/contributor-architecture-blueprint.md\ndocs/diagrams/" as docs #F0FDF4
+}
+
+caller --> entrypoint
+entrypoint --> chrome
+entrypoint --> page
+entrypoint --> challenge
+entrypoint --> stealth
+entrypoint --> debug
+entrypoint ..> tests : validated by
+tests ..> ci : run in
+@enduml

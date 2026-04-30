@@ -1,0 +1,33 @@
+@startuml packages_windshield
+set namespaceSeparator none
+top to bottom direction
+skinparam componentStyle rectangle
+rectangle "conftest\n1 python file" as conftest
+rectangle "src.windshield\n1 child pkg, 9 modules\n17 python files\nexamples: _errors, adapters, browser" as src.windshield
+rectangle "src.windshield._errors\n1 python file" as src.windshield._errors
+rectangle "src.windshield.adapters\n0 child pkg, 6 modules\n7 python files\nexamples: _factory, _http, _playwright" as src.windshield.adapters
+rectangle "src.windshield.adapters._factory\n1 python file" as src.windshield.adapters._factory
+rectangle "src.windshield.adapters._http\n1 python file" as src.windshield.adapters._http
+rectangle "src.windshield.adapters._playwright\n1 python file" as src.windshield.adapters._playwright
+rectangle "src.windshield.adapters._protocol\n1 python file" as src.windshield.adapters._protocol
+rectangle "src.windshield.adapters._selenium\n1 python file" as src.windshield.adapters._selenium
+rectangle "src.windshield.adapters._undetected\n1 python file" as src.windshield.adapters._undetected
+rectangle "src.windshield.browser\n1 python file" as src.windshield.browser
+rectangle "src.windshield.challenge\n1 python file" as src.windshield.challenge
+rectangle "src.windshield.debug\n1 python file" as src.windshield.debug
+rectangle "src.windshield.http\n1 python file" as src.windshield.http
+rectangle "src.windshield.overlay\n1 python file" as src.windshield.overlay
+rectangle "src.windshield.page\n1 python file" as src.windshield.page
+rectangle "src.windshield.rotation\n1 python file" as src.windshield.rotation
+rectangle "src.windshield.stealth\n1 python file" as src.windshield.stealth
+src.windshield --> src.windshield._errors
+src.windshield --> src.windshield.adapters
+src.windshield --> src.windshield.browser
+src.windshield --> src.windshield.challenge
+src.windshield --> src.windshield.debug
+src.windshield --> src.windshield.http
+src.windshield --> src.windshield.overlay
+src.windshield --> src.windshield.page
+src.windshield --> src.windshield.rotation
+src.windshield --> src.windshield.stealth
+@enduml

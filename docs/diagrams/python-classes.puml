@@ -1,0 +1,192 @@
+@startuml classes_windshield
+set namespaceSeparator none
+class "BackendType" as src.windshield.adapters._protocol.BackendType {
+  name
+}
+class "BlockEvent" as src.windshield.rotation.BlockEvent {
+  backend
+  reason : str
+  timestamp : float
+}
+class "HttpLocatorAdapter" as src.windshield.adapters._http.HttpLocatorAdapter {
+  {abstract}click() -> None
+  count() -> int
+  evaluate(expression: str, arg: Any) -> Any
+  fill(value: str) -> None
+  get_attribute(name: str) -> str | None
+  inner_text() -> str
+  input_value() -> str
+  is_enabled() -> bool
+  is_visible() -> bool
+  nth(index: int) -> HttpLocatorAdapter
+  {abstract}press(key: str) -> None
+  text_content() -> str | None
+  type(text: str) -> None
+}
+class "HttpPageAdapter" as src.windshield.adapters._http.HttpPageAdapter {
+  backend_name : str
+  context : Any
+  main_frame : Any
+  raw : Any
+  url : str
+  {abstract}bring_to_front() -> None
+  close() -> None
+  content() -> str
+  evaluate(expression: str, arg: Any) -> Any
+  frames() -> list[Any]
+  goto(url: str) -> Any
+  locator(selector: str) -> HttpLocatorAdapter
+  on(event: str, handler: Callable[..., Any]) -> None
+  screenshot() -> bytes
+  title() -> str
+  wait_for_timeout(timeout_ms: float) -> None
+  {abstract}wait_for_url(url_or_predicate: Any) -> None
+}
+class "LocatorAdapter" as src.windshield.adapters._protocol.LocatorAdapter {
+  click() -> None
+  count() -> int
+  evaluate(expression: str, arg: Any) -> Any
+  fill(value: str) -> None
+  get_attribute(name: str) -> str | None
+  inner_text() -> str
+  input_value() -> str
+  is_enabled() -> bool
+  is_visible() -> bool
+  nth(index: int) -> LocatorAdapter
+  press(key: str) -> None
+  text_content() -> str | None
+  type(text: str) -> None
+}
+class "PageAdapter" as src.windshield.adapters._protocol.PageAdapter {
+  backend_name : str
+  context : Any
+  main_frame : Any
+  raw : Any
+  url : str
+  bring_to_front() -> None
+  close() -> None
+  content() -> str
+  evaluate(expression: str, arg: Any) -> Any
+  frames() -> list[Any]
+  goto(url: str) -> Any
+  locator(selector: str) -> LocatorAdapter
+  on(event: str, handler: Callable[..., Any]) -> None
+  screenshot() -> bytes
+  title() -> str
+  wait_for_timeout(timeout_ms: float) -> None
+  wait_for_url(url_or_predicate: Any) -> None
+}
+class "PlaywrightLocatorAdapter" as src.windshield.adapters._playwright.PlaywrightLocatorAdapter {
+  click() -> None
+  count() -> int
+  evaluate(expression: str, arg: Any) -> Any
+  fill(value: str) -> None
+  get_attribute(name: str) -> str | None
+  inner_text() -> str
+  input_value() -> str
+  is_enabled() -> bool
+  is_visible() -> bool
+  nth(index: int) -> PlaywrightLocatorAdapter
+  press(key: str) -> None
+  text_content() -> str | None
+  type(text: str) -> None
+}
+class "PlaywrightPageAdapter" as src.windshield.adapters._playwright.PlaywrightPageAdapter {
+  backend_name : str
+  context : Any
+  main_frame : Any
+  raw : Any
+  url : str
+  bring_to_front() -> None
+  close() -> None
+  content() -> str
+  evaluate(expression: str, arg: Any) -> Any
+  frames() -> list[Any]
+  goto(url: str) -> Any
+  locator(selector: str) -> PlaywrightLocatorAdapter
+  on(event: str, handler: Callable[..., Any]) -> None
+  screenshot() -> bytes
+  title() -> str
+  wait_for_timeout(timeout_ms: float) -> None
+  wait_for_url(url_or_predicate: Any) -> None
+}
+class "RotationStrategy" as src.windshield.rotation.RotationStrategy {
+  backends : list[BackendType]
+  block_history : dict[BackendType, list[BlockEvent]]
+  create_page() -> tuple[BackendType, PageAdapter]
+  next_backend() -> BackendType
+  report_block(backend: BackendType | str, reason: str) -> None
+  report_success(backend: BackendType | str) -> None
+  reset() -> None
+  summary() -> dict[str, Any]
+}
+class "SeleniumLocatorAdapter" as src.windshield.adapters._selenium.SeleniumLocatorAdapter {
+  click() -> None
+  count() -> int
+  evaluate(expression: str, arg: Any) -> Any
+  fill(value: str) -> None
+  get_attribute(name: str) -> str | None
+  inner_text() -> str
+  input_value() -> str
+  is_enabled() -> bool
+  is_visible() -> bool
+  nth(index: int) -> _SeleniumNthLocatorAdapter
+  press(key: str) -> None
+  text_content() -> str | None
+  type(text: str) -> None
+}
+class "SeleniumPageAdapter" as src.windshield.adapters._selenium.SeleniumPageAdapter {
+  backend_name : str
+  context : Any
+  main_frame : Any
+  raw : Any
+  url : str
+  bring_to_front() -> None
+  close() -> None
+  content() -> str
+  evaluate(expression: str, arg: Any) -> Any
+  frames() -> list[Any]
+  goto(url: str) -> None
+  locator(selector: str) -> SeleniumLocatorAdapter
+  on(event: str, handler: Any) -> None
+  screenshot() -> bytes
+  title() -> str
+  wait_for_timeout(timeout_ms: float) -> None
+  wait_for_url(url_or_predicate: Any) -> None
+}
+class "UndetectedChromePageAdapter" as src.windshield.adapters._undetected.UndetectedChromePageAdapter {
+  backend_name : str
+}
+class "<color:red>UnsupportedOperationError</color>" as src.windshield.adapters._protocol.UnsupportedOperationError {
+}
+class "<color:red>WindshieldError</color>" as src.windshield._errors.WindshieldError {
+}
+class "_HttpFrameStub" as src.windshield.adapters._http._HttpFrameStub {
+  name : str
+  url : str
+}
+class "_SeleniumFrameAdapter" as src.windshield.adapters._selenium._SeleniumFrameAdapter {
+  name : str
+  url : str
+  content() -> str
+  locator(selector: str) -> _SeleniumFrameLocatorAdapter
+}
+class "_SeleniumFrameLocatorAdapter" as src.windshield.adapters._selenium._SeleniumFrameLocatorAdapter {
+}
+class "_SeleniumNthLocatorAdapter" as src.windshield.adapters._selenium._SeleniumNthLocatorAdapter {
+  click() -> None
+  count() -> int
+  evaluate(expression: str, arg: Any) -> Any
+  fill(value: str) -> None
+  get_attribute(name: str) -> str | None
+  inner_text() -> str
+  input_value() -> str
+  is_enabled() -> bool
+  is_visible() -> bool
+  nth(index: int) -> _SeleniumNthLocatorAdapter
+  press(key: str) -> None
+  text_content() -> str | None
+  type(text: str) -> None
+}
+src.windshield.adapters._selenium._SeleniumFrameLocatorAdapter --|> src.windshield.adapters._selenium.SeleniumLocatorAdapter
+@enduml

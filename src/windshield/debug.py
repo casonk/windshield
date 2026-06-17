@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import re
 from collections.abc import Callable
@@ -238,27 +239,15 @@ def install_page_runtime_debug_capture(
             }
         )
 
-    try:
+    with contextlib.suppress(Exception):
         page.on("console", on_console)
-    except Exception:  # pylint: disable=broad-except
-        pass
-    try:
+    with contextlib.suppress(Exception):
         page.on("pageerror", on_pageerror)
-    except Exception:  # pylint: disable=broad-except
-        pass
-    try:
+    with contextlib.suppress(Exception):
         page.on("request", on_request)
-    except Exception:  # pylint: disable=broad-except
-        pass
-    try:
+    with contextlib.suppress(Exception):
         page.on("response", on_response)
-    except Exception:  # pylint: disable=broad-except
-        pass
-    try:
+    with contextlib.suppress(Exception):
         page.on("requestfailed", on_requestfailed)
-    except Exception:  # pylint: disable=broad-except
-        pass
-    try:
+    with contextlib.suppress(Exception):
         page._windshield_runtime_debug_capture_installed = True
-    except Exception:  # pylint: disable=broad-except
-        pass

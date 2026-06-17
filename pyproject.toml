@@ -28,6 +28,7 @@ dev = [
     "pytest>=8",
     "ruff",
     "black",
+    "pylint",
     "beautifulsoup4",
     "requests",
     "dyno_lab @ git+https://github.com/casonk/dyno-lab.git",

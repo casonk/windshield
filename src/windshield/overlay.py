@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import re
 import sys
 import time
@@ -286,10 +287,8 @@ def wait_for_manual_continue(
 
     try:
         if overlay_enabled:
-            try:
+            with contextlib.suppress(Exception):
                 page.bring_to_front()
-            except Exception:  # pylint: disable=broad-except
-                pass
 
             overlay_injected = bool(
                 page.evaluate(
@@ -413,7 +412,7 @@ def wait_for_manual_continue(
                     overlay_injected = False
 
             if auto_continue_deadline and time.monotonic() >= auto_continue_deadline:
-                try:
+                with contextlib.suppress(Exception):
                     page.evaluate(
                         """
                         ({overlayId, continueFlag}) => {
@@ -427,8 +426,6 @@ def wait_for_manual_continue(
                             "continueFlag": safe_continue_flag,
                         },
                     )
-                except Exception:  # pylint: disable=broad-except
-                    pass
                 return True
 
             remaining = max(0.0, deadline - time.monotonic())
@@ -440,10 +437,8 @@ def wait_for_manual_continue(
                     can_prompt_terminal = False
                     ready = []
                 if ready:
-                    try:
+                    with contextlib.suppress(Exception):
                         _ = sys.stdin.readline()
-                    except Exception:  # pylint: disable=broad-except
-                        pass
                     return True
             elif remaining > 0:
                 time.sleep(min(0.5, remaining))
@@ -452,7 +447,7 @@ def wait_for_manual_continue(
     except Exception:  # pylint: disable=broad-except
         return False
     finally:
-        try:
+        with contextlib.suppress(Exception):
             page.evaluate(
                 """
                 ({overlayId}) => {
@@ -462,8 +457,6 @@ def wait_for_manual_continue(
                 """,
                 {"overlayId": safe_overlay_id},
             )
-        except Exception:  # pylint: disable=broad-except
-            pass
 
 
 def wait_for_manual_otp_continue(

@@ -21,9 +21,52 @@ For development:
 ```bash
 git clone https://github.com/casonk/windshield.git
 cd windshield
-pip install -e ".[dev]"
-pre-commit install
+./bootstrap.sh --all --pre-commit
 ```
+
+`bootstrap.sh` creates `.venv`, installs the package in editable mode, and then
+reports which optional browser backends actually resolved — worth knowing,
+because **every backend here is an optional extra**. `./bootstrap.sh` on its own
+installs `.[dev]`, which gives you the test tooling and no way to drive a page:
+
+```
+  [ ] playwright                 page interaction (the primary backend)
+  [ ] selenium                   selenium driver support
+  [x] requests                   windshield.http
+```
+
+Pick what you need:
+
+| Command | Installs |
+| --- | --- |
+| `./bootstrap.sh` | `.[dev]` — tests and linting only |
+| `./bootstrap.sh --all` | every backend, plus dev |
+| `./bootstrap.sh --extras playwright` | just the primary backend |
+| `./bootstrap.sh --extras playwright,http` | pick your own set |
+
+Playwright's browser binaries are a separate download; the script tells you when
+that step is needed:
+
+```bash
+.venv/bin/playwright install chromium
+```
+
+<details>
+<summary>Why not <code>pip install -e ".[dev]"</code> directly?</summary>
+
+Since [PEP 668](https://peps.python.org/pep-0668/), Debian, Ubuntu, Arch and
+openSUSE mark the system Python as externally managed, and pip refuses to
+install into it:
+
+```
+error: externally-managed-environment
+```
+
+Fedora still allows it, which is why the old instruction worked on some
+machines and not others. Installing into a virtualenv is correct on all of
+them, and on macOS and Windows too.
+
+</details>
 
 ## Modules
 

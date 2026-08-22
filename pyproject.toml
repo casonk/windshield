@@ -21,9 +21,21 @@ classifiers = [
 [project.optional-dependencies]
 playwright = ["playwright"]
 selenium = ["selenium"]
-undetected = ["undetected-chromedriver"]
+# undetected-chromedriver 3.5.5 still does `from distutils.version import
+# LooseVersion`, and distutils was removed from the stdlib in Python 3.12
+# (PEP 632). Without setuptools the extra installs cleanly and then raises
+# ModuleNotFoundError on first import. setuptools ships a distutils shim via
+# its distutils-precedence.pth, which restores the import.
+undetected = ["undetected-chromedriver", "setuptools; python_version >= '3.12'"]
 http = ["requests", "beautifulsoup4"]
-all = ["playwright", "selenium", "undetected-chromedriver", "requests", "beautifulsoup4"]
+all = [
+    "playwright",
+    "selenium",
+    "undetected-chromedriver",
+    "setuptools; python_version >= '3.12'",
+    "requests",
+    "beautifulsoup4",
+]
 dev = [
     "pytest>=8",
     "ruff",

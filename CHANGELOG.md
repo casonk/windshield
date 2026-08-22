@@ -2,7 +2,18 @@
 
 ## [0.2.0] — Unreleased
 
+### Fixed
+- The `undetected` and `all` extras were unusable on Python 3.12+.
+  `undetected-chromedriver` 3.5.5 imports `distutils`, removed from the stdlib
+  in PEP 632, so the extra installed cleanly and then raised
+  `ModuleNotFoundError: No module named 'distutils'` on first import. Both
+  extras now pull `setuptools` on 3.12+, which restores the shim.
+
 ### Added
+- `bootstrap.sh` — creates a virtualenv, installs editable, and reports which
+  optional browser backends resolved. The README previously documented a bare
+  `pip install -e ".[dev]"`, which PEP 668 causes current Debian, Ubuntu, Arch
+  and openSUSE to refuse, and which installs no browser backend at all.
 - Multi-backend adapter layer (`windshield.adapters`)
   - `PlaywrightPageAdapter` — thin wrapper for Playwright sync pages
   - `SeleniumPageAdapter` — Selenium WebDriver with stale-element retry

@@ -28,7 +28,8 @@
 ## [0.1.0] — 2026-04-26
 
 ### Added
-- Initial extraction from `personal-finance` browser automation shared modules.
+- Initial extraction of browser-automation shared modules from a private
+  consumer repository.
 - `windshield.browser` — Chrome for Testing download, discovery, CDP version helpers.
 - `windshield.page` — Playwright page interaction: fill, click, type, wait, read, submit.
 - `windshield.debug` — Page snapshots (HTML + JSON + PNG), runtime event capture, JSONL logging.

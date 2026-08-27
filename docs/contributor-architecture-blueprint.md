@@ -2,7 +2,7 @@
 
 ## Overview
 
-Windshield is a generic browser automation utility library built on top of Playwright's synchronous API. It was extracted from the `personal-finance` repository to decouple reusable browser automation primitives from provider-specific scraping logic.
+Windshield is a generic browser automation utility library built on top of Playwright's synchronous API. It was extracted from a private consumer repository to decouple reusable browser automation primitives from provider-specific scraping logic.
 
 ## Module Architecture
 
@@ -30,7 +30,7 @@ windshield/
 ## Data Flow
 
 ```
-Downstream consumer (e.g. personal-finance)
+Downstream consumer (e.g. a provider-specific scraper)
     │
     ├── windshield.browser   → Chrome binary
     ├── windshield.stealth   → User agent string

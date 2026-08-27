@@ -41,6 +41,28 @@ Agents will never be able to run `sudo` commands in this environment. If a task 
 
 Always require the user to run those commands instead of retrying `sudo`; do not claim a sudo-backed live change was applied until the user shares the result.
 
+## Local CI Verification
+
+CI (`.github/workflows/ci.yml`) runs the shared `install-check` and `python-ci`
+workflows. Reproduce locally before pushing:
+
+```bash
+pip install -e ".[dev]"
+pre-commit run --all-files
+pytest -q
+```
+
+Install with the `[dev]` extra, not a bare `pip install -e .`: the browser
+backends are optional extras (`playwright`, `selenium`, `undetected`), and CI's
+`install-check` only proves the package installs and imports on each platform,
+not that any backend works. `undetected` additionally needs `setuptools` on
+Python 3.12+, since `undetected-chromedriver` still imports the removed
+`distutils`.
+
+`pre-commit` auto-fixing hooks rewrite files and exit 1 on the run that made the
+change; re-run, confirm exit 0, then stage what they rewrote. Keep ruff/black
+versions matched between pre-commit and CI, as the Development Rules note.
+
 ## Session Memory
 
 - Read `LESSONSLEARNED.md` and `CHATHISTORY.md` (if present) when resuming work.

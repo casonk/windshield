@@ -10,7 +10,6 @@ Mark items `[x]` when complete and move them to Done.
 
 ## Pending
 
-- [manual:2026-04-26] Add Playwright stealth script injection helper
 - [manual:2026-04-26] Add architecture diagrams via archility
 - [manual:2026-04-26] Consider adding async Playwright (async_api) support alongside sync_api
 - [manual:2026-07-23] Playwright async API support for adapter layer
@@ -22,6 +21,10 @@ Mark items `[x]` when complete and move them to Done.
 ## In Progress
 
 ## Done
+
+- [x] [manual:2026-04-26] Add Playwright stealth script injection helper.
+  Added `install_playwright_stealth_scripts` with mock-backed context/page
+  tests and explicit opt-in usage documentation. [manual:2026-08-31]
 
 - [x] [manual:2026-08-23] Add a `## Local CI Verification` section to
   `AGENTS.md`. Completed in 0f46a5d (`docs: add a Local CI Verification section

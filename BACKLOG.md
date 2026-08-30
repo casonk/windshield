@@ -10,14 +10,6 @@ Mark items `[x]` when complete and move them to Done.
 
 ## Pending
 
-- [manual:2026-08-23] Add a `## Local CI Verification` section to `AGENTS.md`.
-  The repo ships CI workflows but `AGENTS.md` does not say how to reproduce
-  them locally — `scripts/check_agents_md.py` in traction-control flags it.
-  Include the optional-dependency install (`pip install -e ".[dev]"`), since
-  bare `pip install -e .` skips the optional backends and their tests fail with
-  `ModuleNotFoundError`. Template:
-  `traction-control/docs/templates/AGENTS.md`.
-
 - [manual:2026-04-26] Add Playwright stealth script injection helper
 - [manual:2026-04-26] Add architecture diagrams via archility
 - [manual:2026-04-26] Consider adding async Playwright (async_api) support alongside sync_api
@@ -30,3 +22,7 @@ Mark items `[x]` when complete and move them to Done.
 ## In Progress
 
 ## Done
+
+- [x] [manual:2026-08-23] Add a `## Local CI Verification` section to
+  `AGENTS.md`. Completed in 0f46a5d (`docs: add a Local CI Verification section
+  to AGENTS.md`, #7).

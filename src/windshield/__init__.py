@@ -80,7 +80,9 @@ from windshield.page import (
 )
 from windshield.rotation import RotationStrategy
 from windshield.stealth import (
+    DEFAULT_PLAYWRIGHT_STEALTH_SCRIPTS,
     DEFAULT_STEALTH_USER_AGENTS,
+    install_playwright_stealth_scripts,
     normalize_selector_list,
     normalize_string_list,
     resolve_rotating_user_agent,
@@ -161,7 +163,9 @@ __all__ = [
     "wait_for_text_to_disappear",
     "wait_for_url_contains",
     # stealth
+    "DEFAULT_PLAYWRIGHT_STEALTH_SCRIPTS",
     "DEFAULT_STEALTH_USER_AGENTS",
+    "install_playwright_stealth_scripts",
     "normalize_selector_list",
     "normalize_string_list",
     "resolve_rotating_user_agent",

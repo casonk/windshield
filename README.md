@@ -80,6 +80,21 @@ them, and on macOS and Windows too.
 | `windshield.http` | HTTP opener, URL matching, browser location, error redaction |
 | `windshield.overlay` | In-page manual-continue overlay for human-in-the-loop steps |
 
+### Playwright initialization scripts
+
+For an opt-in, generic Playwright fingerprint adjustment, install the bundled
+initialization scripts on a context **before** creating its first page. They run
+before page JavaScript on every document in that context. Provider-specific
+scripts remain the caller's responsibility and can replace the bundled tuple.
+
+```python
+from windshield import install_playwright_stealth_scripts
+
+context = browser.new_context()
+install_playwright_stealth_scripts(context)
+page = context.new_page()
+```
+
 ## Quick Start
 
 ```python

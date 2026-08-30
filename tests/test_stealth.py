@@ -5,13 +5,53 @@ from __future__ import annotations
 import json
 import tempfile
 from pathlib import Path
+from unittest.mock import MagicMock
 
 from windshield.stealth import (
+    DEFAULT_PLAYWRIGHT_STEALTH_SCRIPTS,
     DEFAULT_STEALTH_USER_AGENTS,
+    install_playwright_stealth_scripts,
     normalize_selector_list,
     normalize_string_list,
     resolve_rotating_user_agent,
 )
+
+
+class TestInstallPlaywrightStealthScripts:
+    def test_installs_default_scripts(self) -> None:
+        context = MagicMock()
+
+        installed = install_playwright_stealth_scripts(context)
+
+        assert installed == len(DEFAULT_PLAYWRIGHT_STEALTH_SCRIPTS)
+        context.add_init_script.assert_called_once_with(
+            script=DEFAULT_PLAYWRIGHT_STEALTH_SCRIPTS[0]
+        )
+
+    def test_uses_caller_supplied_scripts_and_ignores_empty_sources(self) -> None:
+        page = MagicMock()
+
+        installed = install_playwright_stealth_scripts(page, scripts=(" one ", "", " two "))
+
+        assert installed == 2
+        assert page.add_init_script.call_args_list[0].kwargs == {"script": "one"}
+        assert page.add_init_script.call_args_list[1].kwargs == {"script": "two"}
+
+    def test_requires_playwright_init_script_target(self) -> None:
+        try:
+            install_playwright_stealth_scripts(object())
+        except TypeError as exc:
+            assert "add_init_script" in str(exc)
+        else:  # pragma: no cover - makes the assertion failure explicit
+            raise AssertionError("expected TypeError")
+
+    def test_rejects_non_string_custom_script(self) -> None:
+        try:
+            install_playwright_stealth_scripts(MagicMock(), scripts=("valid", 2))  # type: ignore[arg-type]
+        except TypeError as exc:
+            assert "must be strings" in str(exc)
+        else:  # pragma: no cover - makes the assertion failure explicit
+            raise AssertionError("expected TypeError")
 
 
 class TestNormalizeStringList:

@@ -10,7 +10,6 @@ Mark items `[x]` when complete and move them to Done.
 
 ## Pending
 
-- [manual:2026-04-26] Add architecture diagrams via archility
 - [manual:2026-04-26] Consider adding async Playwright (async_api) support alongside sync_api
 - [manual:2026-07-23] Playwright async API support for adapter layer
 - [manual:2026-07-23] CDP-based event capture for Selenium/UC backends
@@ -21,6 +20,11 @@ Mark items `[x]` when complete and move them to Done.
 ## In Progress
 
 ## Done
+
+- [x] [manual:2026-04-26] Add architecture diagrams via archility. Completed
+  through the checked-in PlantUML and Draw.io sources, PNG/SVG renders, and
+  supplemental import/class/tooling diagrams (f9e65fd, a737eb6, 6e0c57e,
+  aec4d00).
 
 - [x] [manual:2026-04-26] Add Playwright stealth script injection helper.
   Added `install_playwright_stealth_scripts` with mock-backed context/page

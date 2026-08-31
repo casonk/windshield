@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from windshield.debug import drain_chromium_cdp_events
+
 
 class _SeleniumNthLocatorAdapter:
     """Locator adapter that filters to a single element by index."""
@@ -423,6 +425,22 @@ class SeleniumPageAdapter:
 
     def on(self, event: str, handler: Any) -> None:
         self._event_handlers.setdefault(event, []).append(handler)
+
+    def drain_cdp_events(self) -> list[dict[str, Any]]:
+        """Dispatch currently available Chrome performance-log events.
+
+        Configure performance logging when creating the driver, then call this
+        from the application's own polling loop. Handlers registered through
+        :meth:`on` receive normalized event dictionaries.
+        """
+        events = drain_chromium_cdp_events(self._driver)
+        for event in events:
+            for handler in self._event_handlers.get(str(event.get("event", "")), []):
+                try:
+                    handler(event)
+                except Exception:  # pylint: disable=broad-except
+                    continue
+        return events
 
     # -- lifecycle -------------------------------------------------------------
 

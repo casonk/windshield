@@ -205,6 +205,23 @@ class TestSeleniumPageAdapter:
         page.on("console", handler)
         assert handler in page._event_handlers["console"]
 
+    def test_drain_cdp_events_dispatches_matching_handlers(self) -> None:
+        driver = _make_driver()
+        driver.get_log.return_value = [
+            {
+                "message": '{"message":{"method":"Runtime.consoleAPICalled",'
+                '"params":{"type":"log","args":[{"value":"hello"}]}}}'
+            }
+        ]
+        page = SeleniumPageAdapter(driver)
+        handler = MagicMock()
+        page.on("console", handler)
+
+        events = page.drain_cdp_events()
+
+        assert events[0]["text"] == "hello"
+        handler.assert_called_once_with(events[0])
+
     def test_context_is_driver(self) -> None:
         driver = _make_driver()
         page = SeleniumPageAdapter(driver)

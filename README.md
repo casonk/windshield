@@ -114,6 +114,19 @@ Pass an async Playwright `Page` through `raw` when the application owns the
 browser lifecycle. Without `raw`, the helper starts Playwright and creates a
 page using the supplied launch options.
 
+### Selenium and undetected Chrome CDP events
+
+Chrome-backed Selenium and undetected-chromedriver sessions can expose network
+and console events through the performance log. Enable that log when creating
+the driver, register normal page event handlers, and drain it from your own
+polling loop. This helper deliberately does not start a background thread.
+
+```python
+page.on("response", events.append)
+page.on("console", events.append)
+page.drain_cdp_events()
+```
+
 ## Quick Start
 
 ```python

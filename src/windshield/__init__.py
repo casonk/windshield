@@ -34,6 +34,7 @@ from windshield.challenge import (
 from windshield.debug import (
     append_debug_jsonl,
     capture_page_snapshot,
+    drain_chromium_cdp_events,
     install_page_runtime_debug_capture,
     normalize_runtime_capture_text,
     snapshot_safe_name,
@@ -125,6 +126,7 @@ __all__ = [
     # debug
     "append_debug_jsonl",
     "capture_page_snapshot",
+    "drain_chromium_cdp_events",
     "install_page_runtime_debug_capture",
     "normalize_runtime_capture_text",
     "snapshot_safe_name",

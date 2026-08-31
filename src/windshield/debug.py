@@ -105,6 +105,95 @@ def normalize_runtime_capture_text(value: Any, max_len: int = 260) -> str:
     return text
 
 
+def drain_chromium_cdp_events(driver: Any) -> list[dict[str, Any]]:
+    """Drain and normalize Chrome performance-log events from a WebDriver.
+
+    Selenium and undetected-chromedriver expose Chrome DevTools Protocol events
+    through ``driver.get_log("performance")`` when performance logging is
+    enabled on the driver. The function is deliberately pull-based: callers
+    decide when to poll, and drivers without that capability simply return no
+    events.
+    """
+    get_log = getattr(driver, "get_log", None)
+    if not callable(get_log):
+        return []
+    try:
+        entries = get_log("performance")
+    except Exception:  # pylint: disable=broad-except
+        return []
+
+    events: list[dict[str, Any]] = []
+    for entry in entries if isinstance(entries, list) else []:
+        try:
+            raw = json.loads(str(entry.get("message", "")))
+            message = raw.get("message", {}) if isinstance(raw, dict) else {}
+            method = str(message.get("method", ""))
+            params = message.get("params", {})
+            if not isinstance(params, dict):
+                continue
+        except (AttributeError, TypeError, ValueError, json.JSONDecodeError):
+            continue
+
+        if method == "Network.requestWillBeSent":
+            request = params.get("request", {})
+            if isinstance(request, dict):
+                events.append(
+                    {
+                        "event": "request",
+                        "url": str(request.get("url", "")),
+                        "method": str(request.get("method", "")),
+                        "resource_type": str(params.get("type", "")),
+                        "navigation": str(params.get("type", "")) == "Document",
+                    }
+                )
+        elif method == "Network.responseReceived":
+            response = params.get("response", {})
+            if isinstance(response, dict):
+                events.append(
+                    {
+                        "event": "response",
+                        "url": str(response.get("url", "")),
+                        "status": response.get("status"),
+                        "ok": int(response.get("status", 0) or 0) < 400,
+                        "resource_type": str(params.get("type", "")),
+                    }
+                )
+        elif method == "Network.loadingFailed":
+            events.append(
+                {
+                    "event": "requestfailed",
+                    "failure": str(params.get("errorText", "")),
+                    "resource_type": str(params.get("type", "")),
+                }
+            )
+        elif method == "Runtime.consoleAPICalled":
+            args = params.get("args", [])
+            text = " ".join(
+                str(arg.get("value", arg.get("description", "")))
+                for arg in args
+                if isinstance(arg, dict)
+            )
+            events.append(
+                {
+                    "event": "console",
+                    "type": str(params.get("type", "")),
+                    "text": text,
+                }
+            )
+        elif method == "Log.entryAdded":
+            log_entry = params.get("entry", {})
+            if isinstance(log_entry, dict):
+                events.append(
+                    {
+                        "event": "pageerror" if log_entry.get("level") == "error" else "console",
+                        "type": str(log_entry.get("level", "")),
+                        "text": str(log_entry.get("text", "")),
+                        "url": str(log_entry.get("url", "")),
+                    }
+                )
+    return events
+
+
 def install_page_runtime_debug_capture(
     page: Any,
     record_event: Callable[[dict[str, Any]], None],

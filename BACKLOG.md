@@ -10,7 +10,6 @@ Mark items `[x]` when complete and move them to Done.
 
 ## Pending
 
-- [manual:2026-07-23] CDP-based event capture for Selenium/UC backends
 - [manual:2026-07-23] Integration tests with real browsers (needs CI with browser setup)
 - [manual:2026-07-23] Profile manager for managing multiple Chrome profiles
 - [manual:2026-07-23] Cookie/session state serialization across backends
@@ -18,6 +17,11 @@ Mark items `[x]` when complete and move them to Done.
 ## In Progress
 
 ## Done
+
+- [x] [manual:2026-07-23] Add CDP-based event capture for Selenium/UC
+  backends. Added an explicit, pull-based performance-log drain that
+  normalizes Chrome CDP network and console events and dispatches registered
+  handlers without requiring background threads. [manual:2026-09-01]
 
 - [x] [manual:2026-04-26] Add async Playwright (`async_api`) support alongside
   the sync API. Consolidated the duplicate adapter-layer item: added parallel

@@ -10,10 +10,24 @@ from typing import Any
 from windshield.debug import (
     append_debug_jsonl,
     capture_page_snapshot,
+    drain_chromium_cdp_events,
     install_page_runtime_debug_capture,
     normalize_runtime_capture_text,
     snapshot_safe_name,
 )
+
+
+class _PerformanceLogDriver:
+    def __init__(self, entries: list[dict[str, str]]) -> None:
+        self._entries = entries
+
+    def get_log(self, log_type: str) -> list[dict[str, str]]:
+        assert log_type == "performance"
+        return self._entries
+
+
+def _cdp_entry(method: str, params: dict[str, Any]) -> dict[str, str]:
+    return {"message": json.dumps({"message": {"method": method, "params": params}})}
 
 
 class FakePage:
@@ -121,6 +135,53 @@ class TestNormalizeRuntimeCaptureText:
         result = normalize_runtime_capture_text(long_text, max_len=50)
         assert len(result) == 50
         assert result.endswith("...")
+
+
+class TestDrainChromiumCdpEvents:
+    def test_normalizes_network_console_and_log_events(self) -> None:
+        driver = _PerformanceLogDriver(
+            [
+                _cdp_entry(
+                    "Network.requestWillBeSent",
+                    {
+                        "type": "Document",
+                        "request": {"url": "https://example.test", "method": "GET"},
+                    },
+                ),
+                _cdp_entry(
+                    "Network.responseReceived",
+                    {
+                        "type": "Document",
+                        "response": {"url": "https://example.test", "status": 200},
+                    },
+                ),
+                _cdp_entry(
+                    "Network.loadingFailed", {"type": "XHR", "errorText": "net::ERR_FAILED"}
+                ),
+                _cdp_entry(
+                    "Runtime.consoleAPICalled", {"type": "log", "args": [{"value": "hello"}]}
+                ),
+                _cdp_entry("Log.entryAdded", {"entry": {"level": "error", "text": "boom"}}),
+            ]
+        )
+
+        events = drain_chromium_cdp_events(driver)
+
+        assert [event["event"] for event in events] == [
+            "request",
+            "response",
+            "requestfailed",
+            "console",
+            "pageerror",
+        ]
+        assert events[0]["navigation"] is True
+        assert events[1]["ok"] is True
+        assert events[2]["failure"] == "net::ERR_FAILED"
+        assert events[3]["text"] == "hello"
+
+    def test_ignores_unavailable_or_malformed_logs(self) -> None:
+        assert drain_chromium_cdp_events(object()) == []
+        assert drain_chromium_cdp_events(_PerformanceLogDriver([{"message": "not-json"}])) == []
 
 
 class TestInstallPageRuntimeDebugCapture:

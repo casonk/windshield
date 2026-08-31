@@ -3,10 +3,13 @@
 from windshield._errors import WindshieldError
 from windshield.adapters import (
     DEFAULT_ROTATION_ORDER,
+    AsyncLocatorAdapter,
+    AsyncPageAdapter,
     BackendType,
     LocatorAdapter,
     PageAdapter,
     UnsupportedOperationError,
+    create_async_playwright_page,
     create_page,
 )
 from windshield.browser import (
@@ -91,11 +94,14 @@ from windshield.stealth import (
 __all__ = [
     "WindshieldError",
     # adapters
+    "AsyncLocatorAdapter",
+    "AsyncPageAdapter",
     "BackendType",
     "DEFAULT_ROTATION_ORDER",
     "LocatorAdapter",
     "PageAdapter",
     "UnsupportedOperationError",
+    "create_async_playwright_page",
     "create_page",
     # rotation
     "RotationStrategy",

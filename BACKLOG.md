@@ -10,8 +10,6 @@ Mark items `[x]` when complete and move them to Done.
 
 ## Pending
 
-- [manual:2026-04-26] Consider adding async Playwright (async_api) support alongside sync_api
-- [manual:2026-07-23] Playwright async API support for adapter layer
 - [manual:2026-07-23] CDP-based event capture for Selenium/UC backends
 - [manual:2026-07-23] Integration tests with real browsers (needs CI with browser setup)
 - [manual:2026-07-23] Profile manager for managing multiple Chrome profiles
@@ -20,6 +18,12 @@ Mark items `[x]` when complete and move them to Done.
 ## In Progress
 
 ## Done
+
+- [x] [manual:2026-04-26] Add async Playwright (`async_api`) support alongside
+  the sync API. Consolidated the duplicate adapter-layer item: added parallel
+  awaitable page/locator protocols, wrappers, a Playwright-only constructor,
+  and mock-backed coverage without changing the synchronous multi-backend
+  contract. [manual:2026-08-31]
 
 - [x] [manual:2026-04-26] Add architecture diagrams via archility. Completed
   through the checked-in PlantUML and Draw.io sources, PNG/SVG renders, and

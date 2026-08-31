@@ -95,6 +95,25 @@ install_playwright_stealth_scripts(context)
 page = context.new_page()
 ```
 
+### Async Playwright adapter
+
+The default adapter API remains synchronous so Selenium, undetected Chrome, and
+HTTP consumers keep one common contract. Async applications can opt into the
+parallel Playwright-only API without changing those callers:
+
+```python
+from windshield import create_async_playwright_page
+
+page = await create_async_playwright_page(raw=existing_async_page)
+await page.goto("https://example.com")
+title = await page.title()
+await page.close()
+```
+
+Pass an async Playwright `Page` through `raw` when the application owns the
+browser lifecycle. Without `raw`, the helper starts Playwright and creates a
+page using the supplied launch options.
+
 ## Quick Start
 
 ```python

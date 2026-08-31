@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from windshield.adapters._protocol import BackendType, PageAdapter
+from windshield.adapters._protocol import AsyncPageAdapter, BackendType, PageAdapter
 
 
 def create_page(
@@ -104,6 +104,34 @@ def _create_playwright(*, raw: Any = None, headless: bool = False, **kwargs: Any
     browser = pw.chromium.launch(headless=headless, **kwargs)
     page = browser.new_page()
     return PlaywrightPageAdapter(page)
+
+
+async def create_async_playwright_page(
+    *, raw: Any = None, headless: bool = False, **kwargs: Any
+) -> AsyncPageAdapter:
+    """Create or wrap a page using Playwright's async API.
+
+    This is deliberately Playwright-only. Other backends retain the existing
+    synchronous :func:`create_page` contract until they can provide equivalent
+    awaitable behavior.
+    """
+    from windshield.adapters._playwright import AsyncPlaywrightPageAdapter
+
+    if raw is not None:
+        return AsyncPlaywrightPageAdapter(raw)
+
+    try:
+        from playwright.async_api import async_playwright
+    except ImportError as exc:
+        raise ImportError(
+            "playwright is required for the async Playwright backend. "
+            "Install it with: pip install playwright && playwright install"
+        ) from exc
+
+    pw = await async_playwright().start()
+    browser = await pw.chromium.launch(headless=headless, **kwargs)
+    page = await browser.new_page()
+    return AsyncPlaywrightPageAdapter(page)
 
 
 def _create_selenium(

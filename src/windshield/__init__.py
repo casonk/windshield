@@ -84,6 +84,7 @@ from windshield.page import (
 )
 from windshield.profiles import ProfileManager
 from windshield.rotation import RotationStrategy
+from windshield.session import export_session_state, import_session_state
 from windshield.stealth import (
     DEFAULT_PLAYWRIGHT_STEALTH_SCRIPTS,
     DEFAULT_STEALTH_USER_AGENTS,
@@ -109,6 +110,9 @@ __all__ = [
     "RotationStrategy",
     # profiles
     "ProfileManager",
+    # session
+    "export_session_state",
+    "import_session_state",
     # browser
     "chrome_executable_from_dir",
     "discover_chrome_binary",

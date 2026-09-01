@@ -11,11 +11,15 @@ Mark items `[x]` when complete and move them to Done.
 ## Pending
 
 - [manual:2026-07-23] Integration tests with real browsers (needs CI with browser setup)
-- [manual:2026-07-23] Cookie/session state serialization across backends
 
 ## In Progress
 
 ## Done
+
+- [x] [manual:2026-07-23] Add cookie/session state serialization across
+  backends. Added explicit in-memory, JSON-serializable cookie exchange for
+  Playwright, Selenium/undetected Chrome, and HTTP without automatic storage.
+  [manual:2026-09-01]
 
 - [x] [manual:2026-07-23] Add a profile manager for multiple Chrome profiles.
   Added validated named-directory creation, discovery, and existence checks for

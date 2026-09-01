@@ -142,6 +142,22 @@ work_profile = profiles.create("work")
 page = create_page("undetected", profile_dir=work_profile)
 ```
 
+### Cookie-session exchange
+
+Session exchange is explicit and in-memory: it gives the caller a
+JSON-serializable cookie snapshot but never writes it to disk. Cookies are
+bearer credentials; persist the snapshot only in an appropriate secure store.
+
+```python
+from windshield import export_session_state, import_session_state
+
+state = export_session_state(source_page)
+import_session_state(target_page, state)
+```
+
+Selenium can add cookies only for the currently open domain. Navigate to each
+domain before importing multi-domain snapshots there.
+
 ## Quick Start
 
 ```python

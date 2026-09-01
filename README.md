@@ -158,6 +158,18 @@ import_session_state(target_page, state)
 Selenium can add cookies only for the currently open domain. Navigate to each
 domain before importing multi-domain snapshots there.
 
+### Real-browser integration check
+
+The dedicated Browser Integration workflow installs Chromium and drives only an
+inline document through the synchronous Playwright adapter. Run it locally when
+changing adapter behavior:
+
+```bash
+pip install -e ".[dev,playwright]"
+python -m playwright install chromium
+pytest -q tests/test_browser_integration.py
+```
+
 ## Quick Start
 
 ```python

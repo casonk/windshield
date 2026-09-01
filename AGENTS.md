@@ -44,12 +44,22 @@ Always require the user to run those commands instead of retrying `sudo`; do not
 ## Local CI Verification
 
 CI (`.github/workflows/ci.yml`) runs the shared `install-check` and `python-ci`
-workflows. Reproduce locally before pushing:
+workflows. `.github/workflows/browser-integration.yml` separately runs the
+real Chromium smoke test. Reproduce locally before pushing:
 
 ```bash
 pip install -e ".[dev]"
 pre-commit run --all-files
 pytest -q
+```
+
+To run the browser smoke test rather than letting it skip when Playwright or
+Chromium is absent:
+
+```bash
+pip install -e ".[dev,playwright]"
+python -m playwright install chromium
+pytest -q tests/test_browser_integration.py
 ```
 
 Install with the `[dev]` extra, not a bare `pip install -e .`: the browser

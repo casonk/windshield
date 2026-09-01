@@ -10,11 +10,15 @@ Mark items `[x]` when complete and move them to Done.
 
 ## Pending
 
-- [manual:2026-07-23] Integration tests with real browsers (needs CI with browser setup)
 
 ## In Progress
 
 ## Done
+
+- [x] [manual:2026-07-23] Add integration tests with real browsers. Added a
+  dedicated Chromium CI job and an inline-document Playwright adapter smoke
+  test that skips in ordinary environments without browser provisioning.
+  [manual:2026-09-01]
 
 - [x] [manual:2026-07-23] Add cookie/session state serialization across
   backends. Added explicit in-memory, JSON-serializable cookie exchange for

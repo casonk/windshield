@@ -82,6 +82,7 @@ from windshield.page import (
     wait_for_text_to_disappear,
     wait_for_url_contains,
 )
+from windshield.profiles import ProfileManager
 from windshield.rotation import RotationStrategy
 from windshield.stealth import (
     DEFAULT_PLAYWRIGHT_STEALTH_SCRIPTS,
@@ -106,6 +107,8 @@ __all__ = [
     "create_page",
     # rotation
     "RotationStrategy",
+    # profiles
+    "ProfileManager",
     # browser
     "chrome_executable_from_dir",
     "discover_chrome_binary",

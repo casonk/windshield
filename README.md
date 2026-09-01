@@ -127,6 +127,21 @@ page.on("console", events.append)
 page.drain_cdp_events()
 ```
 
+### Named Chrome profiles
+
+Use a dedicated user-data directory for each automation identity instead of
+sharing an interactive browser profile. The manager only creates and lists
+directories beneath the root you provide; it never imports, changes, or deletes
+an existing Chrome profile.
+
+```python
+from windshield import ProfileManager, create_page
+
+profiles = ProfileManager("~/.local/share/windshield/profiles")
+work_profile = profiles.create("work")
+page = create_page("undetected", profile_dir=work_profile)
+```
+
 ## Quick Start
 
 ```python

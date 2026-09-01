@@ -11,12 +11,16 @@ Mark items `[x]` when complete and move them to Done.
 ## Pending
 
 - [manual:2026-07-23] Integration tests with real browsers (needs CI with browser setup)
-- [manual:2026-07-23] Profile manager for managing multiple Chrome profiles
 - [manual:2026-07-23] Cookie/session state serialization across backends
 
 ## In Progress
 
 ## Done
+
+- [x] [manual:2026-07-23] Add a profile manager for multiple Chrome profiles.
+  Added validated named-directory creation, discovery, and existence checks for
+  isolated user-data directories without touching existing Chrome data.
+  [manual:2026-09-01]
 
 - [x] [manual:2026-07-23] Add CDP-based event capture for Selenium/UC
   backends. Added an explicit, pull-based performance-log drain that

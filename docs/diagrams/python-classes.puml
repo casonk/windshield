@@ -1,5 +1,73 @@
 @startuml classes_windshield
 set namespaceSeparator none
+class "AsyncLocatorAdapter" as src.windshield.adapters._protocol.AsyncLocatorAdapter {
+  click() -> None
+  count() -> int
+  evaluate(expression: str, arg: Any) -> Any
+  fill(value: str) -> None
+  get_attribute(name: str) -> str | None
+  inner_text() -> str
+  input_value() -> str
+  is_enabled() -> bool
+  is_visible() -> bool
+  nth(index: int) -> AsyncLocatorAdapter
+  press(key: str) -> None
+  text_content() -> str | None
+  type(text: str) -> None
+}
+class "AsyncPageAdapter" as src.windshield.adapters._protocol.AsyncPageAdapter {
+  backend_name : str
+  context : Any
+  main_frame : Any
+  raw : Any
+  url : str
+  bring_to_front() -> None
+  close() -> None
+  content() -> str
+  evaluate(expression: str, arg: Any) -> Any
+  frames() -> list[Any]
+  goto(url: str) -> Any
+  locator(selector: str) -> AsyncLocatorAdapter
+  on(event: str, handler: Callable[..., Any]) -> None
+  screenshot() -> bytes
+  title() -> str
+  wait_for_timeout(timeout_ms: float) -> None
+  wait_for_url(url_or_predicate: Any) -> None
+}
+class "AsyncPlaywrightLocatorAdapter" as src.windshield.adapters._playwright.AsyncPlaywrightLocatorAdapter {
+  click() -> None
+  count() -> int
+  evaluate(expression: str, arg: Any) -> Any
+  fill(value: str) -> None
+  get_attribute(name: str) -> str | None
+  inner_text() -> str
+  input_value() -> str
+  is_enabled() -> bool
+  is_visible() -> bool
+  nth(index: int) -> AsyncPlaywrightLocatorAdapter
+  press(key: str) -> None
+  text_content() -> str | None
+  type(text: str) -> None
+}
+class "AsyncPlaywrightPageAdapter" as src.windshield.adapters._playwright.AsyncPlaywrightPageAdapter {
+  backend_name : str
+  context : Any
+  main_frame : Any
+  raw : Any
+  url : str
+  bring_to_front() -> None
+  close() -> None
+  content() -> str
+  evaluate(expression: str, arg: Any) -> Any
+  frames() -> list[Any]
+  goto(url: str) -> Any
+  locator(selector: str) -> AsyncPlaywrightLocatorAdapter
+  on(event: str, handler: Callable[..., Any]) -> None
+  screenshot() -> bytes
+  title() -> str
+  wait_for_timeout(timeout_ms: float) -> None
+  wait_for_url(url_or_predicate: Any) -> None
+}
 class "BackendType" as src.windshield.adapters._protocol.BackendType {
   name
 }
@@ -110,6 +178,13 @@ class "PlaywrightPageAdapter" as src.windshield.adapters._playwright.PlaywrightP
   wait_for_timeout(timeout_ms: float) -> None
   wait_for_url(url_or_predicate: Any) -> None
 }
+class "ProfileManager" as src.windshield.profiles.ProfileManager {
+  root : Path
+  create(name: str) -> Path
+  exists(name: str) -> bool
+  list_profiles() -> list[str]
+  profile_dir(name: str) -> Path
+}
 class "RotationStrategy" as src.windshield.rotation.RotationStrategy {
   backends : list[BackendType]
   block_history : dict[BackendType, list[BlockEvent]]
@@ -144,6 +219,7 @@ class "SeleniumPageAdapter" as src.windshield.adapters._selenium.SeleniumPageAda
   bring_to_front() -> None
   close() -> None
   content() -> str
+  drain_cdp_events() -> list[dict[str, Any]]
   evaluate(expression: str, arg: Any) -> Any
   frames() -> list[Any]
   goto(url: str) -> None

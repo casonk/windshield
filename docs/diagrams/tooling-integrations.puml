@@ -8,7 +8,7 @@ skinparam linetype ortho
 rectangle ".github/workflows/browser-integration.yml\n5 detected tools" as source_github_workflows_browser_integration_yml #E0F2FE
 rectangle ".github/workflows/ci.yml\n2 detected tools" as source_github_workflows_ci_yml #E0F2FE
 rectangle ".github/workflows/secret-scan.yml\n1 detected tool" as source_github_workflows_secret_scan_yml #E0F2FE
-rectangle "bootstrap.sh\n3 detected tools" as source_bootstrap_sh #E0F2FE
+rectangle "bootstrap.sh\n2 detected tools" as source_bootstrap_sh #E0F2FE
 cloud "actions/checkout" as tool_actions_checkout #FEF3C7
 cloud "actions/setup-python" as tool_actions_setup_python #FEF3C7
 cloud "casonk/.github/.github/workflows/install-check.yml" as tool_casonk_github_github_workflows_install_check_yml #FEF3C7
@@ -17,7 +17,6 @@ cloud "casonk/.github/.github/workflows/secret-scan.yml" as tool_casonk_github_g
 cloud "cat" as tool_cat #FEF3C7
 cloud "pip" as tool_pip #FEF3C7
 cloud "playwright" as tool_playwright #FEF3C7
-cloud "pre-commit" as tool_pre_commit #FEF3C7
 cloud "pytest" as tool_pytest #FEF3C7
 cloud "sed" as tool_sed #FEF3C7
 source_github_workflows_browser_integration_yml --> tool_actions_checkout
@@ -29,10 +28,9 @@ source_github_workflows_ci_yml --> tool_casonk_github_github_workflows_install_c
 source_github_workflows_ci_yml --> tool_casonk_github_github_workflows_python_ci_yml
 source_github_workflows_secret_scan_yml --> tool_casonk_github_github_workflows_secret_scan_yml
 source_bootstrap_sh --> tool_cat
-source_bootstrap_sh --> tool_pre_commit
 source_bootstrap_sh --> tool_sed
 note as toolingGraphSummary
 Scanned 4 tooling entrypoints.
-Detected 11 third-party tools.
+Detected 10 third-party tools.
 end note
 @enduml

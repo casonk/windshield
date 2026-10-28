@@ -9,7 +9,6 @@
 - https://github.com/microsoft/playwright-python — Playwright Python bindings (sync and async API)
 - https://github.com/SeleniumHQ/selenium — Selenium WebDriver browser automation
 - https://github.com/ultrafunkamsterdam/undetected-chromedriver — Anti-detection Chrome driver
-- https://github.com/ArtifexSoftware/pdf2image — PDF rendering (used by downstream consumers)
 
 ## Public APIs and Data Sources
 
@@ -20,3 +19,5 @@
 - https://playwright.dev/python/docs/intro — Playwright Python documentation
 - https://www.selenium.dev/documentation/ — Selenium WebDriver documentation
 - https://chromedevtools.github.io/devtools-protocol/ — Chrome DevTools Protocol specification
+- https://requests.readthedocs.io/ — Requests HTTP client used by the HTTP-only adapter
+- https://www.crummy.com/software/BeautifulSoup/bs4/doc/ — Beautiful Soup parser used by the HTTP-only adapter

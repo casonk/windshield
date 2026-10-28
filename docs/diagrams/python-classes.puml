@@ -1,4 +1,4 @@
-@startuml classes_windshield
+@startuml classes_checkout
 set namespaceSeparator none
 class "AsyncLocatorAdapter" as src.windshield.adapters._protocol.AsyncLocatorAdapter {
   click() -> None

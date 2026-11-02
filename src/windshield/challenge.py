@@ -76,18 +76,6 @@ def is_challenge_page(page: Any, snippets: list[str]) -> bool:
                 return True
         except Exception:  # pylint: disable=broad-except
             continue
-
-    weak_presence_selectors = [
-        "script[src*='turnstile']",
-        "form#form_authenticated",
-    ]
-    if "cf_chl" in url or "__cf_chl" in url or ("cloudflare" in url and "challenge" in url):
-        for selector in weak_presence_selectors:
-            try:
-                if page.locator(selector).count() > 0:
-                    return True
-            except Exception:  # pylint: disable=broad-except
-                continue
     return False
 
 

@@ -3,6 +3,7 @@
 ## [0.2.0] — Unreleased
 
 ### Fixed
+- Manual-step guidance (`sanitize_manual_guidance_text`) now drops control and invisible format characters. The text comes from the page being driven and is printed to the operator's terminal and shown in the overlay, so an escape sequence in a heading or button label (title changes, clipboard writes, screen clears) could previously reach the terminal.
 - The `undetected` and `all` extras were unusable on Python 3.12+.
   `undetected-chromedriver` 3.5.5 imports `distutils`, removed from the stdlib
   in PEP 632, so the extra installed cleanly and then raised

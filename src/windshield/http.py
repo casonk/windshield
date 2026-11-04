@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 import ssl
+import unicodedata
 import urllib.request
 from typing import Any
 
@@ -80,8 +81,15 @@ def sanitize_error_text(text: str, secrets: list[str]) -> str:
 
 
 def sanitize_manual_guidance_text(text: Any, max_len: int = 180) -> str:
-    """Collapse whitespace, redact long digit sequences, and truncate."""
+    """Collapse whitespace, drop control characters, redact long digit sequences, and truncate.
+
+    The result is printed to the operator's terminal and shown in an overlay, and it comes from
+    the page being driven, so escape sequences (ESC, BEL, C1 controls) and invisible format
+    characters are removed rather than passed through.
+    """
     value = " ".join(str(text or "").split())
+    value = "".join(ch for ch in value if unicodedata.category(ch) not in {"Cc", "Cf"})
+    value = " ".join(value.split())
     if not value:
         return ""
     value = re.sub(r"\b\d{4,}\b", "[redacted-digits]", value)

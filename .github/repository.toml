@@ -4,6 +4,7 @@
 [repository]
 # One line shown on GitHub. Keep it free of private repository names and local paths.
 description = "Reusable Playwright browser automation utilities — Chrome management, page interaction, debugging, challenge detection, and stealth helpers."
+topics = ["playwright", "browser-automation", "chrome", "cdp", "python", "web-scraping", "testing"]
 
 [main_branch]
 # Direct commits and pushes to main are refused unless this is true.

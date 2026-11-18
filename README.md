@@ -139,6 +139,11 @@ by hand.
 - The server is unauthenticated and grants full browser control, so it is
   published on `127.0.0.1` only and windshield refuses non-loopback endpoints
   unless `WINDSHIELD_PLAYWRIGHT_ALLOW_REMOTE=1`.
+- Network modes: the default `isolated` container cannot see pages served on the
+  host's loopback (`localhost` is the container). For UI tests against a local
+  app, run `WINDSHIELD_CONTAINER_NETWORK=host scripts/install_playwright_service.sh`;
+  the container then shares the host network and the server binds `127.0.0.1`
+  only, so the same URLs work. Prefer `isolated` for browsing the internet.
 - If the server is unreachable windshield warns and falls back to a local
   browser; set `WINDSHIELD_PLAYWRIGHT_STRICT=1` to fail instead.
 - Not for flows that need a real Chrome profile, a logged-in persistent

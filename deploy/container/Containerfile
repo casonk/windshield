@@ -12,4 +12,6 @@ USER pwuser
 WORKDIR /home/pwuser
 EXPOSE 3000
 # The server is unauthenticated: publish it on loopback only (the helper script does).
-CMD ["sh", "-c", "exec playwright run-server --port 3000 --host 0.0.0.0"]
+# The script's `host` network mode instead shares the host network and binds 127.0.0.1.
+ENV PLAYWRIGHT_HOST=0.0.0.0 PLAYWRIGHT_PORT=3000
+CMD ["sh", "-c", "exec playwright run-server --port ${PLAYWRIGHT_PORT} --host ${PLAYWRIGHT_HOST}"]

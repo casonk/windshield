@@ -14,8 +14,10 @@ authentication of its own and grants full browser control.
 
 from __future__ import annotations
 
+import asyncio
 import os
 import socket
+import time
 from collections.abc import Mapping
 from typing import Any
 from urllib.parse import urlparse
@@ -27,6 +29,9 @@ ALLOW_REMOTE_ENV = "WINDSHIELD_PLAYWRIGHT_ALLOW_REMOTE"
 STRICT_ENV = "WINDSHIELD_PLAYWRIGHT_STRICT"
 DEFAULT_PORT = 3000
 _LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "::1"})
+CONNECT_ATTEMPTS = 5
+CONNECT_RETRY_SECONDS = 0.5
+_TRANSIENT = ("econnreset", "econnrefused", "socket hang up", "1006")
 _TRUTHY = frozenset({"1", "true", "yes", "on"})
 
 
@@ -81,6 +86,12 @@ def explain_connect_error(exc: BaseException, endpoint: str) -> WindshieldError:
     return WindshieldError(f"playwright_connect_failed: endpoint={endpoint}; {hint}; {first_line}")
 
 
+def _is_transient(exc: BaseException) -> bool:
+    """True for errors seen while the server is still starting (not version mismatches)."""
+    lowered = str(exc).lower()
+    return any(marker in lowered for marker in _TRANSIENT) and "version" not in lowered
+
+
 def _decide(ws_endpoint: str | None, env: Mapping[str, str] | None) -> tuple[str | None, bool]:
     source = os.environ if env is None else env
     endpoint = resolve_endpoint(ws_endpoint, source)
@@ -111,10 +122,14 @@ def launch_or_connect(
     """
     endpoint, use_remote = _decide(ws_endpoint, env)
     if use_remote and endpoint:
-        try:
-            return playwright.chromium.connect(endpoint)
-        except Exception as exc:  # pylint: disable=broad-except
-            raise explain_connect_error(exc, endpoint) from exc
+        for attempt in range(CONNECT_ATTEMPTS):
+            try:
+                return playwright.chromium.connect(endpoint)
+            except Exception as exc:  # pylint: disable=broad-except
+                if attempt + 1 < CONNECT_ATTEMPTS and _is_transient(exc):
+                    time.sleep(CONNECT_RETRY_SECONDS)
+                    continue
+                raise explain_connect_error(exc, endpoint) from exc
     if endpoint is None and (ws_endpoint or (env or os.environ).get(ENDPOINT_ENV)):
         import warnings
 
@@ -135,10 +150,14 @@ async def async_launch_or_connect(
     """Async counterpart of :func:`launch_or_connect`."""
     endpoint, use_remote = _decide(ws_endpoint, env)
     if use_remote and endpoint:
-        try:
-            return await playwright.chromium.connect(endpoint)
-        except Exception as exc:  # pylint: disable=broad-except
-            raise explain_connect_error(exc, endpoint) from exc
+        for attempt in range(CONNECT_ATTEMPTS):
+            try:
+                return await playwright.chromium.connect(endpoint)
+            except Exception as exc:  # pylint: disable=broad-except
+                if attempt + 1 < CONNECT_ATTEMPTS and _is_transient(exc):
+                    await asyncio.sleep(CONNECT_RETRY_SECONDS)
+                    continue
+                raise explain_connect_error(exc, endpoint) from exc
     if endpoint is None and (ws_endpoint or (env or os.environ).get(ENDPOINT_ENV)):
         import warnings
 

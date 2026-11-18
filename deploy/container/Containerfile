@@ -1,0 +1,12 @@
+# Pinned Playwright server for windshield consumers.
+# Build through scripts/playwright_container.sh so PLAYWRIGHT_VERSION always
+# matches the Python client installed in this repo's environment.
+ARG PLAYWRIGHT_VERSION=1.58.0
+FROM mcr.microsoft.com/playwright:v${PLAYWRIGHT_VERSION}-noble
+ARG PLAYWRIGHT_VERSION=1.58.0
+ENV PLAYWRIGHT_VERSION=${PLAYWRIGHT_VERSION}
+WORKDIR /home/pwuser
+USER pwuser
+EXPOSE 3000
+# The server is unauthenticated: publish it on loopback only (the helper script does).
+CMD ["sh", "-c", "exec npx -y playwright@${PLAYWRIGHT_VERSION} run-server --port 3000 --host 0.0.0.0"]

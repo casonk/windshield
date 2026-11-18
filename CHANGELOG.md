@@ -11,6 +11,7 @@
   extras now pull `setuptools` on 3.12+, which restores the shim.
 
 ### Added
+- Containerised Playwright server: `windshield.remote` (`launch_or_connect`, `WINDSHIELD_PLAYWRIGHT_WS`), used automatically by `create_page("playwright")` and `create_async_playwright_page()`; `deploy/container/Containerfile`, `scripts/playwright_container.sh` and `scripts/install_playwright_service.sh`. Loopback-only by default, falls back to a local browser unless `WINDSHIELD_PLAYWRIGHT_STRICT=1`.
 - `bootstrap.sh` — creates a virtualenv, installs editable, and reports which
   optional browser backends resolved. The README previously documented a bare
   `pip install -e ".[dev]"`, which PEP 668 causes current Debian, Ubuntu, Arch

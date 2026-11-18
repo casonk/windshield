@@ -118,6 +118,32 @@ Pass an async Playwright `Page` through `raw` when the application owns the
 browser lifecycle. Without `raw`, the helper starts Playwright and creates a
 page using the supplied launch options.
 
+### Containerised Playwright server
+
+Browser drift between the Playwright client and a local install is a common
+source of failures. Run a pinned server in a local container and let any
+consumer connect to it:
+
+```bash
+scripts/install_playwright_service.sh        # builds the image, installs a user systemd unit
+eval "$(scripts/playwright_container.sh env)" # export WINDSHIELD_PLAYWRIGHT_WS=ws://127.0.0.1:3000/
+```
+
+`create_page("playwright")` and `create_async_playwright_page()` then use
+`chromium.connect()` instead of launching a browser. The image is tagged with
+the installed client's Playwright version, so client and server match by
+construction; rebuild with `scripts/playwright_container.sh build` after
+upgrading Playwright. `scripts/playwright_container.sh start|stop|status` run it
+by hand.
+
+- The server is unauthenticated and grants full browser control, so it is
+  published on `127.0.0.1` only and windshield refuses non-loopback endpoints
+  unless `WINDSHIELD_PLAYWRIGHT_ALLOW_REMOTE=1`.
+- If the server is unreachable windshield warns and falls back to a local
+  browser; set `WINDSHIELD_PLAYWRIGHT_STRICT=1` to fail instead.
+- Not for flows that need a real Chrome profile, a logged-in persistent
+  session, or stealth: those keep using a local browser.
+
 ### Selenium and undetected Chrome CDP events
 
 Chrome-backed Selenium and undetected-chromedriver sessions can expose network

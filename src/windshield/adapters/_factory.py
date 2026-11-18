@@ -88,6 +88,7 @@ def create_page(
 
 def _create_playwright(*, raw: Any = None, headless: bool = False, **kwargs: Any) -> PageAdapter:
     from windshield.adapters._playwright import PlaywrightPageAdapter
+    from windshield.remote import launch_or_connect
 
     if raw is not None:
         return PlaywrightPageAdapter(raw)
@@ -101,7 +102,7 @@ def _create_playwright(*, raw: Any = None, headless: bool = False, **kwargs: Any
         ) from exc
 
     pw = sync_playwright().start()
-    browser = pw.chromium.launch(headless=headless, **kwargs)
+    browser = launch_or_connect(pw, headless=headless, **kwargs)
     page = browser.new_page()
     return PlaywrightPageAdapter(page)
 
@@ -116,6 +117,7 @@ async def create_async_playwright_page(
     awaitable behavior.
     """
     from windshield.adapters._playwright import AsyncPlaywrightPageAdapter
+    from windshield.remote import async_launch_or_connect
 
     if raw is not None:
         return AsyncPlaywrightPageAdapter(raw)
@@ -129,7 +131,7 @@ async def create_async_playwright_page(
         ) from exc
 
     pw = await async_playwright().start()
-    browser = await pw.chromium.launch(headless=headless, **kwargs)
+    browser = await async_launch_or_connect(pw, headless=headless, **kwargs)
     page = await browser.new_page()
     return AsyncPlaywrightPageAdapter(page)
 

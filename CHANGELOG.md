@@ -10,6 +10,9 @@
   `ModuleNotFoundError: No module named 'distutils'` on first import. Both
   extras now pull `setuptools` on 3.12+, which restores the shim.
 
+### Changed
+- Playwright container image now bakes in the pinned `playwright` package (offline start, verified with `--network=none`). `playwright_container.sh start` waits until the server is listening, and `windshield.remote` retries transient connect errors (`ECONNRESET`/`ECONNREFUSED`) up to 5 times; version mismatches are not retried.
+
 ### Added
 - Containerised Playwright server: `windshield.remote` (`launch_or_connect`, `WINDSHIELD_PLAYWRIGHT_WS`), used automatically by `create_page("playwright")` and `create_async_playwright_page()`; `deploy/container/Containerfile`, `scripts/playwright_container.sh` and `scripts/install_playwright_service.sh`. Loopback-only by default, falls back to a local browser unless `WINDSHIELD_PLAYWRIGHT_STRICT=1`.
 - `bootstrap.sh` — creates a virtualenv, installs editable, and reports which

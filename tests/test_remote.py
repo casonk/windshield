@@ -127,3 +127,38 @@ def test_factory_uses_remote_browser_when_configured(
     pw.chromium.connect.assert_called_once()
     pw.chromium.launch.assert_not_called()
     assert adapter.backend_name == "playwright"
+
+
+def test_transient_connect_errors_are_retried(
+    monkeypatch: pytest.MonkeyPatch, listening_port: int
+) -> None:
+    monkeypatch.setattr(remote, "CONNECT_RETRY_SECONDS", 0)
+    pw = MagicMock()
+    pw.chromium.connect.side_effect = [RuntimeError("connect ECONNRESET"), "browser"]
+    env = {remote.ENDPOINT_ENV: f"ws://127.0.0.1:{listening_port}/"}
+    assert remote.launch_or_connect(pw, env=env) == "browser"
+    assert pw.chromium.connect.call_count == 2
+
+
+def test_version_mismatch_is_not_retried(
+    monkeypatch: pytest.MonkeyPatch, listening_port: int
+) -> None:
+    monkeypatch.setattr(remote, "CONNECT_RETRY_SECONDS", 0)
+    pw = MagicMock()
+    pw.chromium.connect.side_effect = RuntimeError("Playwright version mismatch ECONNRESET")
+    env = {remote.ENDPOINT_ENV: f"ws://127.0.0.1:{listening_port}/"}
+    with pytest.raises(WindshieldError):
+        remote.launch_or_connect(pw, env=env)
+    assert pw.chromium.connect.call_count == 1
+
+
+def test_persistent_transient_errors_give_up(
+    monkeypatch: pytest.MonkeyPatch, listening_port: int
+) -> None:
+    monkeypatch.setattr(remote, "CONNECT_RETRY_SECONDS", 0)
+    pw = MagicMock()
+    pw.chromium.connect.side_effect = RuntimeError("connect ECONNREFUSED")
+    env = {remote.ENDPOINT_ENV: f"ws://127.0.0.1:{listening_port}/"}
+    with pytest.raises(WindshieldError, match="connect_failed"):
+        remote.launch_or_connect(pw, env=env)
+    assert pw.chromium.connect.call_count == remote.CONNECT_ATTEMPTS

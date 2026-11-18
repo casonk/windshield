@@ -33,6 +33,11 @@ case "${1:-}" in
     "${engine}" container exists "${name}" 2>/dev/null && { echo "already running"; exit 0; }
     # shellcheck disable=SC2046
     "${engine}" run -d $(run_args) >/dev/null
+    # The published port accepts TCP before the server inside is listening.
+    for _ in $(seq 1 60); do
+      "${engine}" logs "${name}" 2>&1 | grep -q Listening && break
+      sleep 0.5
+    done
     echo "started ${name} on ws://127.0.0.1:${port}"
     ;;
   run)

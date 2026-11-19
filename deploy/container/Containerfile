@@ -1,11 +1,22 @@
 # Pinned Playwright servers for windshield consumers: one or more versions in one container,
 # routed by URL path (/1.58, /1.64) from a single port. Build through
 # scripts/playwright_container.sh, which fills in the build args below.
-# Use the OLDEST served version as the base: newer bases ship Node 26, under which older
-# Playwright releases hang while extracting browser archives (observed with 1.58.2 on the
-# v1.65.1 image). Newer Playwright versions install and launch fine on the older base.
+#
+# Node is pinned explicitly (NODE_MAJOR) and copied over the base image's own, so a base-image
+# change can never silently move it. Older Playwright releases hang extracting browsers under
+# Node 26 (observed with 1.58.2 on the v1.65.1 image), hence the pin and the rotation job's
+# verification before any new combination is promoted.
+ARG NODE_MAJOR=24
 ARG PLAYWRIGHT_BASE=1.58.0
+FROM docker.io/library/node:${NODE_MAJOR}-bookworm-slim AS node
+
+# The OLDEST served version is the base image (system libraries); newer Playwright versions
+# install and launch fine on an older base.
 FROM mcr.microsoft.com/playwright:v${PLAYWRIGHT_BASE}-noble
+ARG NODE_MAJOR
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+RUN test "$(/usr/local/bin/node -p 'process.versions.node.split(".")[0]')" = "${NODE_MAJOR}" \
+ && test "$(command -v node)" = /usr/local/bin/node
 # Space-separated exact versions, each with its own browsers directory (/opt/pw/browsers/<v>).
 ARG PLAYWRIGHT_VERSIONS="1.58.0"
 ENV PLAYWRIGHT_VERSIONS=${PLAYWRIGHT_VERSIONS}

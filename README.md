@@ -138,15 +138,27 @@ by hand.
 - The server is unauthenticated and grants full browser control, so it is
   published on `127.0.0.1` only and windshield refuses non-loopback endpoints
   unless `WINDSHIELD_PLAYWRIGHT_ALLOW_REMOTE=1`.
-- One container serves several Playwright versions. `config/playwright-versions.txt`
-  lists them (one per line; only major.minor must match the client), and the image
-  runs one server per version behind a single port that routes by URL path. Use
-  `WINDSHIELD_PLAYWRIGHT_WS=ws://127.0.0.1:3000/{version}`: windshield replaces
-  `{version}` with the installed client's major.minor (`/1.64`), so every consumer
-  uses the same setting whatever its venv has. A client with no matching server gets a
-  404 listing the available versions; add its version to the file and rebuild with
-  `scripts/playwright_container.sh build`. Keeping consumers on one Playwright
-  version is still preferable (each version adds ~1 GB to the image).
+- One container serves several Playwright versions, routed by URL path from one port.
+  Use `WINDSHIELD_PLAYWRIGHT_WS=ws://127.0.0.1:3000/{version}`: windshield replaces
+  `{version}` with the installed client's major.minor (`/1.64`), so every consumer uses
+  the same setting whatever its venv has. A client with no matching server gets a 404
+  listing the available versions. Each version adds ~1 GB to the image.
+- **Automatic rotation.** `scripts/install_playwright_rotation.sh` installs a weekly
+  Clockwork timer running `python -m windshield.container_rotation`. It looks up new
+  stable Playwright minors on npm and a newer Node LTS; new minors rotate in and the
+  oldest are dropped so five remain (`--window`). A candidate image is built and every
+  served version is driven end to end in a throwaway container (`playwright_container.sh
+  verify`) before anything changes; only then is the state written and the service
+  restarted, re-checked, and rolled back if unhealthy. A rejected candidate leaves the
+  running service untouched and is not retried until something changes (`--force`
+  overrides). A Node bump is attempted together with new versions but never holds them
+  back: if only the Node bump fails, the versions are promoted on the current Node and
+  that Node major is not retried until a newer LTS appears. Preview with
+  `python -m windshield.container_rotation --dry-run`; inspect with `--status`.
+  Rotation state lives in `~/.local/state/windshield/playwright/`
+  (`versions.txt`, `node-major.txt`, `rotation.json`); `config/` holds only the seed.
+  Node is pinned and copied into the image (`config/node-major.txt`), never inherited
+  from the base image.
 - Network modes: the default `isolated` container cannot see pages served on the
   host's loopback (`localhost` is the container). For UI tests against a local
   app, run `WINDSHIELD_CONTAINER_NETWORK=host scripts/install_playwright_service.sh`;

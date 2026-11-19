@@ -126,26 +126,27 @@ consumer connect to it:
 
 ```bash
 scripts/install_playwright_service.sh        # builds the image, installs a user systemd unit
-eval "$(scripts/playwright_container.sh env)" # export WINDSHIELD_PLAYWRIGHT_WS=ws://127.0.0.1:3000/
+eval "$(scripts/playwright_container.sh env)" # export WINDSHIELD_PLAYWRIGHT_WS=ws://127.0.0.1:3000/{version}
 ```
 
 `create_page("playwright")` and `create_async_playwright_page()` then use
-`chromium.connect()` instead of launching a browser. The image is tagged with
-the installed client's Playwright version, so client and server match by
-construction; rebuild with `scripts/playwright_container.sh build` after
-upgrading Playwright. `scripts/playwright_container.sh start|stop|status` run it
+`chromium.connect()` instead of launching a browser. The image is tagged with the
+served versions; rebuild with `scripts/playwright_container.sh build` after
+changing the version list. `scripts/playwright_container.sh start|stop|status` run it
 by hand.
 
 - The server is unauthenticated and grants full browser control, so it is
   published on `127.0.0.1` only and windshield refuses non-loopback endpoints
   unless `WINDSHIELD_PLAYWRIGHT_ALLOW_REMOTE=1`.
-- One image serves one Playwright version. A consumer whose venv has a different
-  Playwright gets a clear "versions differ" error (the server reports both). Run
-  another container for it, e.g.
-  `PLAYWRIGHT_VERSION=1.64.1 scripts/playwright_container.sh build` then
-  `PLAYWRIGHT_VERSION=1.64.1 WINDSHIELD_PLAYWRIGHT_PORT=3064 WINDSHIELD_CONTAINER_NAME=windshield-playwright-1.64.1 scripts/playwright_container.sh start`,
-  and point that consumer at `ws://127.0.0.1:3064/`. Keeping consumers on one
-  Playwright version avoids the extra containers.
+- One container serves several Playwright versions. `config/playwright-versions.txt`
+  lists them (one per line; only major.minor must match the client), and the image
+  runs one server per version behind a single port that routes by URL path. Use
+  `WINDSHIELD_PLAYWRIGHT_WS=ws://127.0.0.1:3000/{version}`: windshield replaces
+  `{version}` with the installed client's major.minor (`/1.64`), so every consumer
+  uses the same setting whatever its venv has. A client with no matching server gets a
+  404 listing the available versions; add its version to the file and rebuild with
+  `scripts/playwright_container.sh build`. Keeping consumers on one Playwright
+  version is still preferable (each version adds ~1 GB to the image).
 - Network modes: the default `isolated` container cannot see pages served on the
   host's loopback (`localhost` is the container). For UI tests against a local
   app, run `WINDSHIELD_CONTAINER_NETWORK=host scripts/install_playwright_service.sh`;

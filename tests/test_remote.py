@@ -162,3 +162,23 @@ def test_persistent_transient_errors_give_up(
     with pytest.raises(WindshieldError, match="connect_failed"):
         remote.launch_or_connect(pw, env=env)
     assert pw.chromium.connect.call_count == remote.CONNECT_ATTEMPTS
+
+
+def test_version_placeholder_becomes_the_client_major_minor(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(remote, "client_version", lambda: "1.64.1")
+    assert (
+        remote.resolve_endpoint("ws://127.0.0.1:3000/{version}", env={})
+        == "ws://127.0.0.1:3000/1.64"
+    )
+
+
+def test_version_placeholder_needs_the_client(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(remote, "client_version", lambda: None)
+    with pytest.raises(WindshieldError, match="endpoint_invalid"):
+        remote.resolve_endpoint("ws://127.0.0.1:3000/{version}", env={})
+
+
+def test_endpoint_without_placeholder_is_untouched() -> None:
+    assert remote.resolve_endpoint("ws://127.0.0.1:3000/", env={}) == "ws://127.0.0.1:3000/"

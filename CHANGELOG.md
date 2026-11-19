@@ -11,6 +11,7 @@
   extras now pull `setuptools` on 3.12+, which restores the shim.
 
 ### Changed
+- The Playwright container serves several versions at once (`config/playwright-versions.txt`, one server per version behind one port routed by URL path). Clients set `WINDSHIELD_PLAYWRIGHT_WS=ws://127.0.0.1:3000/{version}`; `{version}` becomes the installed client's major.minor. The image builds on the oldest version's base because the newest base ships Node 26, under which older Playwright releases hang extracting browser archives; browser installs now time out and retry instead of hanging.
 - Playwright service unit treats the container's SIGTERM exit (143) as a clean stop, so `systemctl --user stop` no longer leaves the unit in `failed`.
 - Playwright container: `WINDSHIELD_CONTAINER_NETWORK=host` mode (shares the host network, server bound to `127.0.0.1`) so UI tests can reach pages served on the host's loopback; the service installer records the mode in the unit.
 - Playwright container image now bakes in the pinned `playwright` package (offline start, verified with `--network=none`). `playwright_container.sh start` waits until the server is listening, and `windshield.remote` retries transient connect errors (`ECONNRESET`/`ECONNREFUSED`) up to 5 times; version mismatches are not retried.

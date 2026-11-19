@@ -1,17 +1,32 @@
-# Pinned Playwright server for windshield consumers.
-# Build through scripts/playwright_container.sh so PLAYWRIGHT_VERSION always
-# matches the Python client installed in this repo's environment.
-ARG PLAYWRIGHT_VERSION=1.58.0
-FROM mcr.microsoft.com/playwright:v${PLAYWRIGHT_VERSION}-noble
-ARG PLAYWRIGHT_VERSION=1.58.0
-ENV PLAYWRIGHT_VERSION=${PLAYWRIGHT_VERSION}
-# Install the server package at build time so the container starts offline and
-# always runs the exact version it was built for.
-RUN npm install -g "playwright@${PLAYWRIGHT_VERSION}" && npm cache clean --force
+# Pinned Playwright servers for windshield consumers: one or more versions in one container,
+# routed by URL path (/1.58, /1.64) from a single port. Build through
+# scripts/playwright_container.sh, which fills in the build args below.
+# Use the OLDEST served version as the base: newer bases ship Node 26, under which older
+# Playwright releases hang while extracting browser archives (observed with 1.58.2 on the
+# v1.65.1 image). Newer Playwright versions install and launch fine on the older base.
+ARG PLAYWRIGHT_BASE=1.58.0
+FROM mcr.microsoft.com/playwright:v${PLAYWRIGHT_BASE}-noble
+# Space-separated exact versions, each with its own browsers directory (/opt/pw/browsers/<v>).
+ARG PLAYWRIGHT_VERSIONS="1.58.0"
+ENV PLAYWRIGHT_VERSIONS=${PLAYWRIGHT_VERSIONS}
+USER root
+RUN set -eu; \
+    for v in ${PLAYWRIGHT_VERSIONS}; do \
+      mkdir -p "/opt/pw/$v" "/opt/pw/browsers/$v"; \
+      npm install --prefix "/opt/pw/$v" --no-audit --no-fund "playwright@$v"; \
+      ok=0; \
+      for try in 1 2 3; do \
+        if PLAYWRIGHT_BROWSERS_PATH="/opt/pw/browsers/$v" DEBUG=pw:install timeout 300 "/opt/pw/$v/node_modules/.bin/playwright" install chromium; then ok=1; break; fi; \
+        echo "playwright $v: browser install attempt $try failed or timed out" >&2; \
+      done; \
+      [ "$ok" = 1 ] || { echo "playwright $v: browser install failed" >&2; exit 1; }; \
+    done; \
+    npm cache clean --force
+COPY serve.js /opt/pw/serve.js
 USER pwuser
 WORKDIR /home/pwuser
 EXPOSE 3000
-# The server is unauthenticated: publish it on loopback only (the helper script does).
-# The script's `host` network mode instead shares the host network and binds 127.0.0.1.
+# The servers are unauthenticated: publish on loopback only (the helper script does), or use its
+# `host` network mode, which binds 127.0.0.1.
 ENV PLAYWRIGHT_HOST=0.0.0.0 PLAYWRIGHT_PORT=3000
-CMD ["sh", "-c", "exec playwright run-server --port ${PLAYWRIGHT_PORT} --host ${PLAYWRIGHT_HOST}"]
+CMD ["node", "/opt/pw/serve.js"]

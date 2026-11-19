@@ -11,6 +11,7 @@
   extras now pull `setuptools` on 3.12+, which restores the shim.
 
 ### Changed
+- Playwright service unit treats the container's SIGTERM exit (143) as a clean stop, so `systemctl --user stop` no longer leaves the unit in `failed`.
 - Playwright container: `WINDSHIELD_CONTAINER_NETWORK=host` mode (shares the host network, server bound to `127.0.0.1`) so UI tests can reach pages served on the host's loopback; the service installer records the mode in the unit.
 - Playwright container image now bakes in the pinned `playwright` package (offline start, verified with `--network=none`). `playwright_container.sh start` waits until the server is listening, and `windshield.remote` retries transient connect errors (`ECONNRESET`/`ECONNREFUSED`) up to 5 times; version mismatches are not retried.
 

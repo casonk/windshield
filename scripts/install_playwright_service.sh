@@ -20,6 +20,7 @@ Environment=WINDSHIELD_CONTAINER_NETWORK=${network}
 ExecStartPre=-/usr/bin/podman rm -f windshield-playwright
 ExecStart=${repo_dir}/scripts/playwright_container.sh run
 ExecStop=/usr/bin/podman stop -t 10 windshield-playwright
+SuccessExitStatus=143
 Restart=on-failure
 RestartSec=10
 

@@ -14,12 +14,20 @@ network="${WINDSHIELD_CONTAINER_NETWORK:-isolated}"
 python_bin="${WINDSHIELD_PYTHON:-${repo_dir}/.venv/bin/python}"
 [[ -x "${python_bin}" ]] || python_bin="$(command -v python3)"
 
-version() {
-  if [[ -n "${PLAYWRIGHT_VERSION:-}" ]]; then echo "${PLAYWRIGHT_VERSION}"; return; fi
-  "${python_bin}" -c 'from importlib.metadata import version; print(version("playwright"))'
+# Versions to serve: $WINDSHIELD_PLAYWRIGHT_VERSIONS, else config/playwright-versions.txt,
+# else the installed Python client's version. Space/comma/newline separated, e.g. "1.58.0 1.64.1".
+versions() {
+  local raw="${WINDSHIELD_PLAYWRIGHT_VERSIONS:-}"
+  if [[ -z "${raw}" && -f "${repo_dir}/config/playwright-versions.txt" ]]; then
+    raw="$(grep -v '^[[:space:]]*#' "${repo_dir}/config/playwright-versions.txt")"
+  fi
+  if [[ -z "${raw}" ]]; then
+    raw="$("${python_bin}" -c 'from importlib.metadata import version; print(version("playwright"))')"
+  fi
+  echo "${raw}" | tr ', ' '\n\n' | grep -v '^$' | sort -V -u | tr '\n' ' ' | sed 's/ $//'
 }
 
-image() { echo "localhost/windshield-playwright:$(version)"; }
+image() { echo "localhost/windshield-playwright:v$(versions | tr ' ' '-')"; }
 
 run_args() {
   # Loopback-only publish; no host mounts, no secrets. --ipc=host avoids Chromium
@@ -36,8 +44,10 @@ run_args() {
 
 case "${1:-}" in
   build)
-    v="$(version)"
-    "${engine}" build --build-arg "PLAYWRIGHT_VERSION=${v}" -t "$(image)" \
+    all="$(versions)"
+    oldest="${all%% *}"   # oldest base image => Node 24; see the Containerfile
+    "${engine}" build --build-arg "PLAYWRIGHT_BASE=${oldest}" \
+      --build-arg "PLAYWRIGHT_VERSIONS=${all}" -t "$(image)" \
       -f "${repo_dir}/deploy/container/Containerfile" "${repo_dir}/deploy/container"
     ;;
   start)
@@ -60,13 +70,13 @@ case "${1:-}" in
     ;;
   status)
     if "${engine}" container exists "${name}" 2>/dev/null; then
-      echo "running: ${name} ($(image)) on ws://127.0.0.1:${port}"
+      echo "running: ${name} ($("${engine}" inspect "${name}" --format "{{.ImageName}}")) on ws://127.0.0.1:${port}/{version}  [versions: $(versions)]"
     else
       echo "not running (image: $(image))"; exit 1
     fi
     ;;
   env)
-    echo "export WINDSHIELD_PLAYWRIGHT_WS=ws://127.0.0.1:${port}/"
+    echo "export WINDSHIELD_PLAYWRIGHT_WS=ws://127.0.0.1:${port}/{version}"
     ;;
   *)
     echo "usage: $0 build|start|run|stop|status|env" >&2; exit 2

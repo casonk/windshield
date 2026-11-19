@@ -39,6 +39,16 @@ def _flag(env: Mapping[str, str], name: str) -> bool:
     return str(env.get(name, "")).strip().lower() in _TRUTHY
 
 
+def client_version() -> str | None:
+    """Installed Playwright client version (``1.64.1``), or None when it isn't installed."""
+    try:
+        from importlib.metadata import PackageNotFoundError, version
+
+        return version("playwright")
+    except (ImportError, PackageNotFoundError):  # pragma: no cover - depends on environment
+        return None
+
+
 def resolve_endpoint(
     ws_endpoint: str | None = None, env: Mapping[str, str] | None = None
 ) -> str | None:
@@ -47,6 +57,13 @@ def resolve_endpoint(
     endpoint = (ws_endpoint or str(source.get(ENDPOINT_ENV, ""))).strip()
     if not endpoint:
         return None
+    if "{version}" in endpoint:
+        full = client_version()
+        if full is None:
+            raise WindshieldError(
+                "playwright_endpoint_invalid: {version} needs the playwright package installed"
+            )
+        endpoint = endpoint.replace("{version}", ".".join(full.split(".")[:2]))
     parsed = urlparse(endpoint)
     if parsed.scheme not in {"ws", "wss"} or not parsed.hostname:
         raise WindshieldError(
@@ -77,8 +94,8 @@ def explain_connect_error(exc: BaseException, endpoint: str) -> WindshieldError:
     lowered = text.lower()
     if "version" in lowered and ("playwright" in lowered or "mismatch" in lowered):
         hint = (
-            "client and server Playwright versions differ; rebuild the container with "
-            "scripts/playwright_container.sh build so it matches the installed client"
+            "client and server Playwright versions differ; add the client's version to config/playwright-versions.txt and rebuild with "
+            "scripts/playwright_container.sh build, then use ws://host:port/{version}"
         )
     else:
         hint = "is the container running? see scripts/playwright_container.sh status"

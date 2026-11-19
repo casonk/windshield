@@ -139,6 +139,13 @@ by hand.
 - The server is unauthenticated and grants full browser control, so it is
   published on `127.0.0.1` only and windshield refuses non-loopback endpoints
   unless `WINDSHIELD_PLAYWRIGHT_ALLOW_REMOTE=1`.
+- One image serves one Playwright version. A consumer whose venv has a different
+  Playwright gets a clear "versions differ" error (the server reports both). Run
+  another container for it, e.g.
+  `PLAYWRIGHT_VERSION=1.64.1 scripts/playwright_container.sh build` then
+  `PLAYWRIGHT_VERSION=1.64.1 WINDSHIELD_PLAYWRIGHT_PORT=3064 WINDSHIELD_CONTAINER_NAME=windshield-playwright-1.64.1 scripts/playwright_container.sh start`,
+  and point that consumer at `ws://127.0.0.1:3064/`. Keeping consumers on one
+  Playwright version avoids the extra containers.
 - Network modes: the default `isolated` container cannot see pages served on the
   host's loopback (`localhost` is the container). For UI tests against a local
   app, run `WINDSHIELD_CONTAINER_NETWORK=host scripts/install_playwright_service.sh`;

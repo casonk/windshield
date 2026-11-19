@@ -5,6 +5,7 @@ set -euo pipefail
 repo_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 unit_dir="${HOME}/.config/systemd/user"
 unit_file="${unit_dir}/windshield-playwright.service"
+network="${WINDSHIELD_CONTAINER_NETWORK:-isolated}"
 
 "${repo_dir}/scripts/playwright_container.sh" build
 
@@ -15,6 +16,7 @@ Description=Windshield Playwright server (container)
 After=network-online.target
 
 [Service]
+Environment=WINDSHIELD_CONTAINER_NETWORK=${network}
 ExecStartPre=-/usr/bin/podman rm -f windshield-playwright
 ExecStart=${repo_dir}/scripts/playwright_container.sh run
 ExecStop=/usr/bin/podman stop -t 10 windshield-playwright
@@ -27,5 +29,5 @@ UNIT
 
 systemctl --user daemon-reload
 systemctl --user enable --now windshield-playwright.service
-echo "Installed ${unit_file}"
+echo "Installed ${unit_file} (network: ${network})"
 echo "Point consumers at it: $("${repo_dir}/scripts/playwright_container.sh" env)"

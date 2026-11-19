@@ -7,6 +7,10 @@ repo_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 name="${WINDSHIELD_CONTAINER_NAME:-windshield-playwright}"
 port="${WINDSHIELD_PLAYWRIGHT_PORT:-3000}"
 engine="${CONTAINER_ENGINE:-podman}"
+# isolated (default): own network, port published on 127.0.0.1; good for scraping the internet.
+# host: shares the host network and binds 127.0.0.1, so pages served on the host's loopback
+#       (UI tests against a local app) are reachable at the same URLs.
+network="${WINDSHIELD_CONTAINER_NETWORK:-isolated}"
 python_bin="${WINDSHIELD_PYTHON:-${repo_dir}/.venv/bin/python}"
 [[ -x "${python_bin}" ]] || python_bin="$(command -v python3)"
 
@@ -20,7 +24,14 @@ image() { echo "localhost/windshield-playwright:$(version)"; }
 run_args() {
   # Loopback-only publish; no host mounts, no secrets. --ipc=host avoids Chromium
   # shared-memory crashes; --init reaps zombie browser processes.
-  echo --rm --init --ipc=host --name "${name}" -p "127.0.0.1:${port}:3000" "$(image)"
+  case "${network}" in
+    isolated)
+      echo --rm --init --ipc=host --name "${name}" -p "127.0.0.1:${port}:3000" "$(image)" ;;
+    host)
+      echo --rm --init --ipc=host --name "${name}" --network=host \
+        -e PLAYWRIGHT_HOST=127.0.0.1 -e "PLAYWRIGHT_PORT=${port}" "$(image)" ;;
+    *) echo "WINDSHIELD_CONTAINER_NETWORK must be isolated or host" >&2; exit 2 ;;
+  esac
 }
 
 case "${1:-}" in

@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import json
-import sys
 import subprocess
+import sys
 from pathlib import Path
 
 from windshield import consumer_matrix as cm
@@ -19,7 +19,7 @@ def done(cmd, code=0, out=""):
 built_with: list[str] = []
 
 
-OWN = "%d.%d" % sys.version_info[:2]
+OWN = f"{sys.version_info[0]}.{sys.version_info[1]}"
 
 
 def fake_runner(py_minor: str = OWN):
@@ -31,7 +31,9 @@ def fake_runner(py_minor: str = OWN):
             venv = Path(cmd[-1])
             (venv / "bin").mkdir(parents=True, exist_ok=True)
             (venv / "bin" / "python").write_text("")
-            (venv / "lib" / f"python{py_minor}" / "site-packages").mkdir(parents=True, exist_ok=True)
+            (venv / "lib" / f"python{py_minor}" / "site-packages").mkdir(
+                parents=True, exist_ok=True
+            )
             return done(cmd)
         if "importlib.metadata" in cmd[-1]:  # probe of a cached client venv
             return done(cmd, out=Path(cmd[0]).parent.parent.name + ".0")
@@ -43,7 +45,12 @@ def fake_runner(py_minor: str = OWN):
 
 
 def suite(**kw) -> cm.Suite:
-    base = dict(name="pf", cwd="/repo", python="/repo/.venv/bin/python", command=("{python}", "-m", "pytest"))
+    base = dict(
+        name="pf",
+        cwd="/repo",
+        python="/repo/.venv/bin/python",
+        command=("{python}", "-m", "pytest"),
+    )
     return cm.Suite(**{**base, **kw})
 
 
@@ -56,18 +63,30 @@ class TestRunSuite:
             return done(cmd, out="12 passed")
 
         env = {"WINDSHIELD_STATE_DIR": str(tmp_path), "PYTHONPATH": "/existing"}
-        out = cm.run_suite(suite(), "1.64.1", "ws://127.0.0.1:3000", env, fake_runner(), suite_runner)
+        out = cm.run_suite(
+            suite(), "1.64.1", "ws://127.0.0.1:3000", env, fake_runner(), suite_runner
+        )
         assert out.status == "passed" and out.detail == "12 passed"
         assert seen["cmd"] == ["/repo/.venv/bin/python", "-m", "pytest"]
         assert seen["cwd"] == "/repo"
         paths = seen["env"]["PYTHONPATH"].split(":")
-        assert paths[0].endswith(f"clients/1.64/lib/python{OWN}/site-packages") and paths[1] == "/existing"
+        assert (
+            paths[0].endswith(f"clients/1.64/lib/python{OWN}/site-packages")
+            and paths[1] == "/existing"
+        )
         assert seen["env"]["WINDSHIELD_PLAYWRIGHT_WS"] == "ws://127.0.0.1:3000/{version}"
         assert seen["env"]["WINDSHIELD_PLAYWRIGHT_STRICT"] == "1"
 
     def test_failure_and_timeout_are_failed_outcomes(self, tmp_path: Path) -> None:
         env = {"WINDSHIELD_STATE_DIR": str(tmp_path)}
-        bad = cm.run_suite(suite(), "1.65.1", "ws://x:1", env, fake_runner(), lambda c, e, d, t: done(c, 1, "1 failed"))
+        bad = cm.run_suite(
+            suite(),
+            "1.65.1",
+            "ws://x:1",
+            env,
+            fake_runner(),
+            lambda c, e, d, t: done(c, 1, "1 failed"),
+        )
         assert bad.status == "failed" and bad.detail == "1 failed"
 
         def slow(cmd, e, d, t):
@@ -76,7 +95,9 @@ class TestRunSuite:
         late = cm.run_suite(suite(timeout=5), "1.65.1", "ws://x:1", env, fake_runner(), slow)
         assert late.status == "failed" and "timed out after 5s" in late.detail
 
-    def test_other_python_minor_gets_its_own_client_built_with_that_python(self, tmp_path: Path) -> None:
+    def test_other_python_minor_gets_its_own_client_built_with_that_python(
+        self, tmp_path: Path
+    ) -> None:
         built_with.clear()
         seen = {}
 
@@ -85,7 +106,12 @@ class TestRunSuite:
             return done(cmd, out="ok")
 
         out = cm.run_suite(
-            suite(), "1.65.1", "ws://x:1", {"WINDSHIELD_STATE_DIR": str(tmp_path)}, fake_runner("3.99"), suite_runner
+            suite(),
+            "1.65.1",
+            "ws://x:1",
+            {"WINDSHIELD_STATE_DIR": str(tmp_path)},
+            fake_runner("3.99"),
+            suite_runner,
         )
         assert out.status == "passed"
         assert built_with == ["/repo/.venv/bin/python"]
@@ -101,8 +127,13 @@ class TestMatrix:
             return done(cmd, out="ok")
 
         outcomes = cm.run_matrix(
-            [suite(name="a"), suite(name="b")], VERSIONS, "ws://x:1", size=3,
-            env={"WINDSHIELD_STATE_DIR": str(tmp_path)}, runner=fake_runner(), suite_runner=suite_runner,
+            [suite(name="a"), suite(name="b")],
+            VERSIONS,
+            "ws://x:1",
+            size=3,
+            env={"WINDSHIELD_STATE_DIR": str(tmp_path)},
+            runner=fake_runner(),
+            suite_runner=suite_runner,
         )
         assert calls == ["1.62", "1.64", "1.65"] * 2
         assert [o.suite for o in outcomes] == ["a"] * 3 + ["b"] * 3
@@ -111,12 +142,27 @@ class TestMatrix:
 class TestConfig:
     def test_loads_valid_suites_and_ignores_malformed_ones(self, tmp_path: Path) -> None:
         f = tmp_path / "s.json"
-        f.write_text(json.dumps([
-            {"name": "a", "cwd": "/r", "python": "/p", "command": ["{python}", "-V"], "timeout": 9, "env": {"X": "1"}},
-            {"name": "broken"},
-        ]))
+        f.write_text(
+            json.dumps(
+                [
+                    {
+                        "name": "a",
+                        "cwd": "/r",
+                        "python": "/p",
+                        "command": ["{python}", "-V"],
+                        "timeout": 9,
+                        "env": {"X": "1"},
+                    },
+                    {"name": "broken"},
+                ]
+            )
+        )
         suites = cm.load_suites({"WINDSHIELD_CONSUMER_TESTS_FILE": str(f)})
-        assert [s.name for s in suites] == ["a"] and suites[0].timeout == 9 and suites[0].env == {"X": "1"}
+        assert (
+            [s.name for s in suites] == ["a"]
+            and suites[0].timeout == 9
+            and suites[0].env == {"X": "1"}
+        )
 
     def test_missing_or_corrupt_file_means_no_suites(self, tmp_path: Path) -> None:
         assert cm.load_suites({"WINDSHIELD_CONSUMER_TESTS_FILE": str(tmp_path / "no")}) == []

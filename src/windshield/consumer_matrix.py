@@ -47,7 +47,13 @@ SuiteRunner = Callable[
 
 def _run_in(cmd: Sequence[str], env: Mapping[str, str], cwd: str, timeout: int):
     return subprocess.run(  # noqa: S603
-        list(cmd), env=dict(env), cwd=cwd, capture_output=True, text=True, timeout=timeout, check=False
+        list(cmd),
+        env=dict(env),
+        cwd=cwd,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+        check=False,
     )
 
 
@@ -73,7 +79,8 @@ def suites_file(env: Mapping[str, str] | None = None) -> Path:
     source = os.environ if env is None else env
     base = source.get("XDG_CONFIG_HOME") or str(Path.home() / ".config")
     return Path(
-        source.get("WINDSHIELD_CONSUMER_TESTS_FILE") or Path(base) / "windshield" / "consumer-tests.json"
+        source.get("WINDSHIELD_CONSUMER_TESTS_FILE")
+        or Path(base) / "windshield" / "consumer-tests.json"
     )
 
 
@@ -125,10 +132,12 @@ def run_suite(
     have = _python_minor(suite.python, env, runner)
     if have is None:
         return Outcome(suite.name, version, "failed", f"cannot run {suite.python}")
-    own = "%d.%d" % sys.version_info[:2]
+    own = f"{sys.version_info[0]}.{sys.version_info[1]}"
     other = None if have == own else have  # build with the suite's Python so compiled deps import
     try:
-        ensure_client(version, env, runner, base_python=suite.python if other else None, python_minor=other)
+        ensure_client(
+            version, env, runner, base_python=suite.python if other else None, python_minor=other
+        )
     except (RuntimeError, subprocess.TimeoutExpired, OSError) as exc:
         return Outcome(suite.name, version, "failed", f"client unavailable: {exc}")
     site = _site_packages(client_venv(version, env, other))
@@ -150,7 +159,10 @@ def run_suite(
         return Outcome(suite.name, version, "failed", str(exc))
     tail = (result.stdout or result.stderr or "").strip().splitlines()
     return Outcome(
-        suite.name, version, "passed" if result.returncode == 0 else "failed", tail[-1] if tail else ""
+        suite.name,
+        version,
+        "passed" if result.returncode == 0 else "failed",
+        tail[-1] if tail else "",
     )
 
 

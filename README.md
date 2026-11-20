@@ -165,6 +165,13 @@ by hand.
   `WINDSHIELD_MATRIX_SIZE`, default 5). List the interpreters that use Playwright in
   `~/.config/windshield/consumers.txt` (one path per line) and each rotation run moves any
   that are behind up to the newest served version, restoring and alerting if that fails.
+  **Consumer suites per version:** `python -m windshield.consumer_matrix` runs the real browser
+  tests of the repos listed in `~/.config/windshield/consumer-tests.json` (name, cwd, python,
+  command with `{python}`) once per served version. It is not part of the rotation gate (it is
+  slow and some suites need host networking); run it before relying on a new window.
+  **Why consumers are not pinned:** repos leave `playwright` unpinned on purpose. The rotation
+  bump owns the client version and the container serves a window of versions, so a pin would
+  only fight the automation and create a PR per release.
   Rotation state lives in `~/.local/state/windshield/playwright/`
   (`versions.txt`, `node-major.txt`, `rotation.json`); `config/` holds only the seed.
   Node is pinned and copied into the image (`config/node-major.txt`), never inherited

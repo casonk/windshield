@@ -80,10 +80,27 @@ def minor_of(version: str) -> str:
     return ".".join(version.split(".")[:2])
 
 
-def ensure_client(version: str, env: Mapping[str, str], runner: Runner = _run) -> Path:
-    """Interpreter of a cached venv holding the Python client for ``version``'s minor."""
+def client_venv(version: str, env: Mapping[str, str], python_minor: str | None = None) -> Path:
+    """Where the cached client for ``version`` lives (one per Python minor if not the default)."""
+    name = minor_of(version) + (f"-py{python_minor}" if python_minor else "")
+    return clients_dir(env) / name
+
+
+def ensure_client(
+    version: str,
+    env: Mapping[str, str],
+    runner: Runner = _run,
+    *,
+    base_python: str | None = None,
+    python_minor: str | None = None,
+) -> Path:
+    """Interpreter of a cached venv holding the Python client for ``version``'s minor.
+
+    ``base_python``/``python_minor`` build it with another interpreter, for suites whose
+    Python differs from windshield's (compiled dependencies must import there).
+    """
     minor = minor_of(version)
-    venv = clients_dir(env) / minor
+    venv = client_venv(version, env, python_minor)
     python = venv / "bin" / "python"
     if python.exists():
         probe = runner(
@@ -93,7 +110,7 @@ def ensure_client(version: str, env: Mapping[str, str], runner: Runner = _run) -
         )
         if probe.returncode == 0 and minor_of(probe.stdout.strip()) == minor:
             return python
-    created = runner([sys.executable, "-m", "venv", "--clear", str(venv)], env, 120)
+    created = runner([base_python or sys.executable, "-m", "venv", "--clear", str(venv)], env, 120)
     if created.returncode != 0:
         raise RuntimeError(f"venv failed: {(created.stderr or created.stdout).strip()[-200:]}")
     installed = runner(

@@ -155,6 +155,11 @@ by hand.
   back: if only the Node bump fails, the versions are promoted on the current Node and
   that Node major is not retried until a newer LTS appears. Preview with
   `python -m windshield.container_rotation --dry-run`; inspect with `--status`.
+  **Alerts:** put recipients in an owner-only `~/.config/windshield/notify.env`
+  (`WINDSHIELD_NOTIFY_SIGNAL_TARGET`, `..._TELEGRAM_TARGET`, `..._GMAIL_TARGET`, plus an
+  optional `..._CONFIG` per channel); rotation then messages through shock-relay once per
+  failed plan, on rollback, on a rejected Node bump, when version checks fail twice in a
+  row, and when a rotation is promoted.
   Rotation state lives in `~/.local/state/windshield/playwright/`
   (`versions.txt`, `node-major.txt`, `rotation.json`); `config/` holds only the seed.
   Node is pinned and copied into the image (`config/node-major.txt`), never inherited

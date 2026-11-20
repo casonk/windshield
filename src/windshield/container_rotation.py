@@ -210,10 +210,14 @@ def rotate(
     force: bool = False,
     restart_service: bool = True,
     log: Callable[[str], None] = print,
+    notify: Callable[[str, str], None] | None = None,
 ) -> int:
     """Run one rotation. Returns 0 (nothing to do / promoted / skipped) or 1 (failed)."""
     env = dict(os.environ if env is None else env)
     directory = state_dir(env)
+    alert = (
+        notify if notify is not None else (lambda subject, body: _alert(env, subject, body, log))
+    )
     script = str(repo_dir / "scripts" / "playwright_container.sh")
     state = load_state(repo_dir, directory)
     if not state.versions:
@@ -224,8 +228,17 @@ def rotate(
         available = fetch_versions()
         node_lts = fetch_node()
     except Exception as exc:  # pylint: disable=broad-except
-        write_status(directory, last_check_error=f"{type(exc).__name__}: {exc}")
+        failures = int(read_status(directory).get("check_failures") or 0) + 1
+        write_status(
+            directory, last_check_error=f"{type(exc).__name__}: {exc}", check_failures=failures
+        )
         log(f"registry lookup failed: {type(exc).__name__}: {exc}")
+        if failures == 2:  # one blip is noise; two weeks running is not
+            alert(
+                "windshield-playwright: version checks keep failing",
+                f"The weekly registry lookup failed {failures} times in a row: "
+                f"{type(exc).__name__}: {exc}\nNew Playwright versions are not being picked up.",
+            )
         return 1
 
     status = read_status(directory)
@@ -239,7 +252,7 @@ def rotate(
         latest_node_lts=node_candidate,
         window=window,
     )
-    write_status(directory, last_check_error=None, last_checked_plan=plan.key)
+    write_status(directory, last_check_error=None, check_failures=0, last_checked_plan=plan.key)
     if not plan.changed:
         log(f"up to date: {' '.join(state.versions)} on node {state.node_major}")
         return 0
@@ -251,7 +264,7 @@ def rotate(
     if dry_run:
         return 0
 
-    def attempt(candidate: Plan) -> str:
+    def attempt(candidate: Plan, quiet: bool = False) -> str:
         """Build, verify, promote one candidate: "promoted", "failed" or "skipped"."""
         if not force and read_status(directory).get("failed_plan") == candidate.key:
             log(f"skipping: this plan already failed; use --force to retry ({candidate.key})")
@@ -268,6 +281,16 @@ def rotate(
                 directory, failed_plan=candidate.key, failed_reason=reason, failed_output=tail
             )
             log(f"candidate rejected ({candidate.key}): {reason}\n{tail}")
+            if not quiet and read_status(directory).get("alerted_plan") != candidate.key:
+                write_status(directory, alerted_plan=candidate.key)
+                alert(
+                    "windshield-playwright: rotation failed",
+                    f"Plan {candidate.key} was rejected: {reason}.\n"
+                    "The running container is unchanged"
+                    + (" (previous versions restored)." if "restored" in reason else ".")
+                    + (f"\n\n{tail}" if tail else "")
+                    + "\n\nRetry: python -m windshield.container_rotation --force",
+                )
             return "failed"
 
         for step, timeout in (("build", 3600), ("verify", 900)):
@@ -303,6 +326,13 @@ def rotate(
             promoted_at=time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         )
         log(f"promoted: {' '.join(candidate.versions)} on node {candidate.node_major}")
+        alert(
+            "windshield-playwright: rotated",
+            f"Now serving Playwright {' '.join(candidate.versions)} on Node {candidate.node_major}"
+            + (f"; added {', '.join(candidate.added)}" if candidate.added else "")
+            + (f"; dropped {', '.join(candidate.dropped)}" if candidate.dropped else "")
+            + ".",
+        )
         prune_images(
             runner,
             env,
@@ -310,7 +340,8 @@ def rotate(
         )
         return "promoted"
 
-    outcome = attempt(plan)
+    fallback_follows = plan.node_changed and bool(plan.added)
+    outcome = attempt(plan, quiet=fallback_follows)
     if outcome == "promoted":
         return 0
     if outcome == "skipped":
@@ -321,6 +352,12 @@ def rotate(
         log(f"retrying without the Node bump (node stays {state.node_major})")
         outcome = attempt(fallback)
         if outcome == "promoted":
+            alert(
+                "windshield-playwright: Node bump rejected",
+                f"Node {plan.node_major} failed verification, so the container stays on "
+                f"Node {state.node_major}. New Playwright versions were still rotated in. "
+                "It will try again when a newer Node LTS ships.",
+            )
             write_status(directory, node_rejected=plan.node_major)
             log(f"node {plan.node_major} rejected; will wait for a newer LTS")
         return 0 if outcome != "failed" else 1
@@ -328,6 +365,20 @@ def rotate(
         write_status(directory, node_rejected=plan.node_major)
         log(f"node {plan.node_major} rejected; will wait for a newer LTS")
     return 1
+
+
+def _alert(env: Mapping[str, str], subject: str, body: str, log: Callable[[str], None]) -> None:
+    """Best-effort alert through shock-relay; never lets a send problem fail the rotation."""
+    from windshield.notify import send_alert, targets
+
+    try:
+        if not targets(env):
+            log("alert not sent: no WINDSHIELD_NOTIFY_*_TARGET configured")
+            return
+        for delivery in send_alert(subject, body, env):
+            log(f"alert via {delivery.channel}: {'sent' if delivery.ok else delivery.error}")
+    except Exception as exc:  # pylint: disable=broad-except
+        log(f"alert failed: {type(exc).__name__}: {exc}")
 
 
 def _image_tag(state: State) -> str:

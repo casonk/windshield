@@ -37,7 +37,9 @@ def _key(version: str) -> tuple[int, ...]:
 def consumers_file(env: Mapping[str, str] | None = None) -> Path:
     source = os.environ if env is None else env
     base = source.get("XDG_CONFIG_HOME") or str(Path.home() / ".config")
-    return Path(source.get("WINDSHIELD_CONSUMERS_FILE") or Path(base) / "windshield" / "consumers.txt")
+    return Path(
+        source.get("WINDSHIELD_CONSUMERS_FILE") or Path(base) / "windshield" / "consumers.txt"
+    )
 
 
 def read_consumers(env: Mapping[str, str] | None = None) -> list[str]:
@@ -63,14 +65,27 @@ def _installed(python: str, env: Mapping[str, str], runner: Runner) -> str | Non
 
 def _install(python: str, spec: str, env: Mapping[str, str], runner: Runner) -> bool:
     venv = runner([python, "-c", _IN_VENV_CODE], env, 60).stdout.strip() == "1"
-    cmd = [python, "-m", "pip", "install", "-q", *([] if venv else ["--user"]), f"playwright=={spec}"]
+    cmd = [
+        python,
+        "-m",
+        "pip",
+        "install",
+        "-q",
+        *([] if venv else ["--user"]),
+        f"playwright=={spec}",
+    ]
     return runner(cmd, env, 600).returncode == 0
 
 
-def _smoke(python: str, version: str, endpoint: str, env: Mapping[str, str], runner: Runner) -> bool:
+def _smoke(
+    python: str, version: str, endpoint: str, env: Mapping[str, str], runner: Runner
+) -> bool:
     minor = minor_of(version)
     try:
-        return runner([python, "-c", _SMOKE, f"{endpoint.rstrip('/')}/{minor}"], env, 120).returncode == 0
+        return (
+            runner([python, "-c", _SMOKE, f"{endpoint.rstrip('/')}/{minor}"], env, 120).returncode
+            == 0
+        )
     except (OSError, subprocess.TimeoutExpired):
         return False
 
@@ -100,6 +115,10 @@ def bump_clients(
             results.append(Bump(python, before, target, "bumped"))
         else:
             _install(python, before, source, runner)
-            results.append(Bump(python, before, before, "restored", f"{target} failed the smoke test"))
-        log(f"client {python}: {results[-1].status} {results[-1].before} -> {results[-1].after} {results[-1].detail}".rstrip())
+            results.append(
+                Bump(python, before, before, "restored", f"{target} failed the smoke test")
+            )
+        log(
+            f"client {python}: {results[-1].status} {results[-1].before} -> {results[-1].after} {results[-1].detail}".rstrip()
+        )
     return results

@@ -100,7 +100,9 @@ def ensure_client(version: str, env: Mapping[str, str], runner: Runner = _run) -
         [str(python), "-m", "pip", "install", "-q", f"playwright=={minor}.*"], env, 600
     )
     if installed.returncode != 0:
-        raise RuntimeError(f"pip install failed: {(installed.stderr or installed.stdout).strip()[-200:]}")
+        raise RuntimeError(
+            f"pip install failed: {(installed.stderr or installed.stdout).strip()[-200:]}"
+        )
     return python
 
 

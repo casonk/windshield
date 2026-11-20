@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -139,7 +139,7 @@ def resolve_rotating_user_agent(
         "selected_index": selected_index,
         "selected_user_agent": selected_user_agent,
         "candidate_count": len(candidates),
-        "updated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "updated_at_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
     try:
         rotation_state_path.parent.mkdir(parents=True, exist_ok=True)

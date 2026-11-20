@@ -6,7 +6,7 @@ import contextlib
 import json
 import re
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -33,7 +33,7 @@ def capture_page_snapshot(
     if snapshot_dir is None:
         return
     try:
-        ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S-%f")
+        ts = datetime.now(UTC).strftime("%Y%m%d-%H%M%S-%f")
         stem = snapshot_safe_name(f"{ts}_{label}")
         html_path = snapshot_dir / f"{stem}.html"
         meta_path = snapshot_dir / f"{stem}.json"
@@ -66,7 +66,7 @@ def capture_page_snapshot(
             json.dumps(
                 {
                     "label": label,
-                    "captured_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    "captured_at_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
                     "url": page_url,
                     "title": title,
                     "frame_urls": frame_urls,
@@ -237,7 +237,7 @@ def install_page_runtime_debug_capture(
                 "lineNumber": location.get("lineNumber"),
                 "columnNumber": location.get("columnNumber"),
             }
-        normalized["timestamp"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        normalized["timestamp"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
         record_event(normalized)
 
     def on_console(message: Any) -> None:

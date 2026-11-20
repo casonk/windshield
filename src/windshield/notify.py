@@ -50,9 +50,7 @@ def targets(env: Mapping[str, str] | None = None) -> dict[str, str]:
     return found
 
 
-def send_alert(
-    subject: str, body: str, env: Mapping[str, str] | None = None
-) -> list[Delivery]:
+def send_alert(subject: str, body: str, env: Mapping[str, str] | None = None) -> list[Delivery]:
     """Send to every configured channel. Returns one Delivery per channel attempted."""
     source = os.environ if env is None else env
     root = shock_relay_root(source)
@@ -83,7 +81,9 @@ def send_alert(
             continue
         if result.returncode != 0:
             detail = (result.stderr or result.stdout).strip().splitlines()
-            deliveries.append(Delivery(channel, detail[-1] if detail else f"exit {result.returncode}"))
+            deliveries.append(
+                Delivery(channel, detail[-1] if detail else f"exit {result.returncode}")
+            )
         else:
             deliveries.append(Delivery(channel))
     return deliveries

@@ -3,6 +3,7 @@
 ## [0.2.0] — Unreleased
 
 ### Fixed
+- Playwright rotation now alerts through shock-relay (Signal, Telegram, Gmail): once per failed plan, on rollback, when a Node bump is rejected, when version checks fail twice running, and when a rotation is promoted. Recipients come from `WINDSHIELD_NOTIFY_<CHANNEL>_TARGET` (see `~/.config/windshield/notify.env`).
 - Manual-step guidance (`sanitize_manual_guidance_text`) now drops control and invisible format characters. The text comes from the page being driven and is printed to the operator's terminal and shown in the overlay, so an escape sequence in a heading or button label (title changes, clipboard writes, screen clears) could previously reach the terminal.
 - The `undetected` and `all` extras were unusable on Python 3.12+.
   `undetected-chromedriver` 3.5.5 imports `distutils`, removed from the stdlib

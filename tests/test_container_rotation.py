@@ -103,10 +103,14 @@ def repo(tmp_path: Path) -> Path:
     return tmp_path / "repo"
 
 
+ALERTS: list[tuple[str, str]] = []
+
+
 def run(
     repo: Path, tmp_path: Path, runner, *, new=("1.66.0",), lts=24, **kw
 ) -> tuple[int, list[str]]:
     logs: list[str] = []
+    ALERTS.clear()
     code = rot.rotate(
         repo,
         env={"WINDSHIELD_STATE_DIR": str(tmp_path / "state")},
@@ -114,6 +118,7 @@ def run(
         fetch_node=lambda: lts,
         runner=runner,
         log=logs.append,
+        notify=lambda subject, body: ALERTS.append((subject, body)),
         **kw,
     )
     return code, logs
@@ -230,6 +235,99 @@ class TestRotate:
             fetch_node=lambda: 24,
             runner=FakeRunner(),
             log=logs.append,
+            notify=lambda subject, body: ALERTS.append((subject, body)),
         )
         assert code == 1 and "offline" in logs[0]
         assert "offline" in rot.read_status(tmp_path / "state" / "playwright")["last_check_error"]
+
+
+class TestAlerts:
+    def test_promotion_is_announced(self, repo, tmp_path) -> None:
+        assert run(repo, tmp_path, FakeRunner())[0] == 0
+        assert [a[0] for a in ALERTS] == ["windshield-playwright: rotated"]
+        assert "1.66.0" in ALERTS[0][1]
+
+    def test_a_failed_rotation_alerts_once_per_plan(self, repo, tmp_path) -> None:
+        assert run(repo, tmp_path, FakeRunner(fail="build"))[0] == 1
+        assert [a[0] for a in ALERTS] == ["windshield-playwright: rotation failed"]
+        assert "--force" in ALERTS[0][1]
+        run(repo, tmp_path, FakeRunner(fail="build"))  # skipped: already failed
+        assert ALERTS == []
+        run(repo, tmp_path, FakeRunner(fail="build"), force=True)  # same plan, already alerted
+        assert ALERTS == []
+
+    def test_rollback_alert_says_previous_versions_restored(self, repo, tmp_path) -> None:
+        class Unhealthy(FakeRunner):
+            def __call__(self, cmd, env, timeout):
+                if cmd[-1] == "smoke":
+                    self.calls.append(list(cmd))
+                    return subprocess.CompletedProcess(cmd, 1, "", "")
+                return super().__call__(cmd, env, timeout)
+
+        assert run(repo, tmp_path, Unhealthy())[0] == 1
+        assert "restored" in ALERTS[0][1]
+
+    def test_a_node_bump_that_falls_back_does_not_report_a_failure(self, repo, tmp_path) -> None:
+        class NodeFails(FakeRunner):
+            def __call__(self, cmd, env, timeout):
+                if cmd[-1] in {"build", "verify"} and env.get("WINDSHIELD_NODE_MAJOR") == "26":
+                    self.calls.append(list(cmd))
+                    return subprocess.CompletedProcess(cmd, 1, "", "hang")
+                return super().__call__(cmd, env, timeout)
+
+        assert run(repo, tmp_path, NodeFails(), lts=26)[0] == 0
+        subjects = [a[0] for a in ALERTS]
+        assert "windshield-playwright: rotation failed" not in subjects
+        assert "windshield-playwright: Node bump rejected" in subjects
+
+    def test_registry_outage_alerts_on_the_second_consecutive_failure(self, repo, tmp_path) -> None:
+        def boom():
+            raise OSError("offline")
+
+        def once():
+            return rot.rotate(
+                repo,
+                env={"WINDSHIELD_STATE_DIR": str(tmp_path / "state")},
+                fetch_versions=boom,
+                fetch_node=lambda: 24,
+                runner=FakeRunner(),
+                log=lambda _m: None,
+                notify=lambda subject, body: ALERTS.append((subject, body)),
+            )
+
+        ALERTS.clear()
+        once()
+        assert ALERTS == []
+        once()
+        assert [a[0] for a in ALERTS] == ["windshield-playwright: version checks keep failing"]
+        once()
+        assert len(ALERTS) == 1
+
+
+class TestSendAlert:
+    def test_channels_without_targets_are_skipped(self) -> None:
+        from windshield import notify
+
+        assert notify.targets({}) == {}
+        assert notify.send_alert("s", "b", {}) == []
+
+    def test_one_channel_failing_does_not_stop_the_others(self, tmp_path) -> None:
+        from windshield import notify
+
+        root = tmp_path / "relay"
+        for rel, code in (
+            ("services/signal-cli/send_message.py", "import sys; sys.exit(3)"),
+            ("services/telegram/send_message.py", "print('ok')"),
+        ):
+            (root / rel).parent.mkdir(parents=True, exist_ok=True)
+            (root / rel).write_text(code)
+        env = {
+            "WINDSHIELD_SHOCK_RELAY_ROOT": str(root),
+            "WINDSHIELD_NOTIFY_SIGNAL_TARGET": "x",
+            "WINDSHIELD_NOTIFY_TELEGRAM_TARGET": "y",
+            "WINDSHIELD_NOTIFY_GMAIL_TARGET": "z",
+        }
+        result = {d.channel: d for d in notify.send_alert("s", "b", env)}
+        assert not result["signal"].ok
+        assert result["telegram"].ok
+        assert "not found" in (result["gmail"].error or "")

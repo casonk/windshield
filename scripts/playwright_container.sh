@@ -14,20 +14,61 @@ network="${WINDSHIELD_CONTAINER_NETWORK:-isolated}"
 python_bin="${WINDSHIELD_PYTHON:-${repo_dir}/.venv/bin/python}"
 [[ -x "${python_bin}" ]] || python_bin="$(command -v python3)"
 
-# Versions to serve: $WINDSHIELD_PLAYWRIGHT_VERSIONS, else config/playwright-versions.txt,
+state_dir="${WINDSHIELD_STATE_DIR:-${XDG_STATE_HOME:-${HOME}/.local/state}/windshield}/playwright"
+
+# Node major baked into the image: $WINDSHIELD_NODE_MAJOR, else the rotation state, else config.
+node_major() {
+  if [[ -n "${WINDSHIELD_NODE_MAJOR:-}" ]]; then echo "${WINDSHIELD_NODE_MAJOR}"; return; fi
+  for f in "${state_dir}/node-major.txt" "${repo_dir}/config/node-major.txt"; do
+    [[ -f "$f" ]] && { tr -d '[:space:]' < "$f"; echo; return; }
+  done
+  echo 24
+}
+
+# Versions to serve: $WINDSHIELD_PLAYWRIGHT_VERSIONS, else the rotation state, $WINDSHIELD_PLAYWRIGHT_VERSIONS, else config/playwright-versions.txt,
 # else the installed Python client's version. Space/comma/newline separated, e.g. "1.58.0 1.64.1".
 versions() {
   local raw="${WINDSHIELD_PLAYWRIGHT_VERSIONS:-}"
-  if [[ -z "${raw}" && -f "${repo_dir}/config/playwright-versions.txt" ]]; then
-    raw="$(grep -v '^[[:space:]]*#' "${repo_dir}/config/playwright-versions.txt")"
-  fi
+  for f in "${state_dir}/versions.txt" "${repo_dir}/config/playwright-versions.txt"; do
+    if [[ -z "${raw}" && -f "$f" ]]; then raw="$(grep -v '^[[:space:]]*#' "$f")"; fi
+  done
   if [[ -z "${raw}" ]]; then
     raw="$("${python_bin}" -c 'from importlib.metadata import version; print(version("playwright"))')"
   fi
   echo "${raw}" | tr ', ' '\n\n' | grep -v '^$' | sort -V -u | tr '\n' ' ' | sed 's/ $//'
 }
 
-image() { echo "localhost/windshield-playwright:v$(versions | tr ' ' '-')"; }
+image() { echo "localhost/windshield-playwright:v$(versions | tr ' ' '-')-node$(node_major)"; }
+
+# Drive a page through every served version, using that version's own client inside the
+# container: proves the router, each server and each browser. Exit 1 on any failure.
+smoke() {
+  local inner="${port}"
+  [[ "${network}" == isolated ]] && inner=3000
+  local v minor failed=0
+  for v in $("${engine}" exec "${name}" ls /opt/pw/ | grep -E '^[0-9]+\.[0-9]+\.[0-9]+'); do
+    minor="${v%.*}"
+    if out="$(timeout 90 "${engine}" exec -w "/opt/pw/${v}" "${name}" node -e "
+const {chromium}=require('/opt/pw/${v}/node_modules/playwright');
+(async()=>{const b=await chromium.connect('ws://127.0.0.1:${inner}/${minor}');
+const p=await b.newPage();await p.goto('data:text/html,<title>ok</title>');
+if(await p.title()!=='ok')throw new Error('wrong title');console.log('chromium '+b.version());await b.close()})()
+.catch(e=>{console.error(String(e.message).split('\n')[0]);process.exit(1)})" 2>&1)"; then
+      echo "ok   ${v}  ${out}"
+    else
+      echo "FAIL ${v}  ${out}"; failed=1
+    fi
+  done
+  return "${failed}"
+}
+
+wait_listening() {
+  for _ in $(seq 1 120); do
+    "${engine}" logs "${name}" 2>&1 | grep -q "Listening on" && return 0
+    sleep 0.5
+  done
+  echo "server did not start" >&2; "${engine}" logs "${name}" 2>&1 | tail -5 >&2; return 1
+}
 
 run_args() {
   # Loopback-only publish; no host mounts, no secrets. --ipc=host avoids Chromium
@@ -47,7 +88,7 @@ case "${1:-}" in
     all="$(versions)"
     oldest="${all%% *}"   # oldest base image => Node 24; see the Containerfile
     "${engine}" build --build-arg "PLAYWRIGHT_BASE=${oldest}" \
-      --build-arg "PLAYWRIGHT_VERSIONS=${all}" -t "$(image)" \
+      --build-arg "PLAYWRIGHT_VERSIONS=${all}" --build-arg "NODE_MAJOR=$(node_major)" -t "$(image)" \
       -f "${repo_dir}/deploy/container/Containerfile" "${repo_dir}/deploy/container"
     ;;
   start)
@@ -55,15 +96,26 @@ case "${1:-}" in
     # shellcheck disable=SC2046
     "${engine}" run -d $(run_args) >/dev/null
     # The published port accepts TCP before the server inside is listening.
-    for _ in $(seq 1 60); do
-      "${engine}" logs "${name}" 2>&1 | grep -q Listening && break
-      sleep 0.5
-    done
+    wait_listening || true
     echo "started ${name} on ws://127.0.0.1:${port}"
     ;;
   run)
     # shellcheck disable=SC2046
     exec "${engine}" run $(run_args)
+    ;;
+  smoke)
+    smoke
+    ;;
+  verify)
+    # Start a throwaway candidate (isolated network, own name and port), smoke it, remove it.
+    name="${name}-candidate"; port="${WINDSHIELD_VERIFY_PORT:-3900}"; network=isolated
+    "${engine}" rm -f "${name}" >/dev/null 2>&1 || true
+    # shellcheck disable=SC2046
+    "${engine}" run -d $(run_args) >/dev/null
+    rc=0
+    wait_listening && smoke || rc=1
+    "${engine}" rm -f "${name}" >/dev/null 2>&1 || true
+    exit "${rc}"
     ;;
   stop)
     "${engine}" stop "${name}" >/dev/null 2>&1 && echo "stopped ${name}" || echo "not running"
@@ -79,6 +131,6 @@ case "${1:-}" in
     echo "export WINDSHIELD_PLAYWRIGHT_WS=ws://127.0.0.1:${port}/{version}"
     ;;
   *)
-    echo "usage: $0 build|start|run|stop|status|env" >&2; exit 2
+    echo "usage: $0 build|start|run|smoke|verify|stop|status|env" >&2; exit 2
     ;;
 esac

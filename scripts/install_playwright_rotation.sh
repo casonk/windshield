@@ -12,7 +12,12 @@ if [[ ! -f "${manifest}" ]]; then
   exit 1
 fi
 
-(cd "${clockwork_dir}" && python3 -m clockwork install --manifest "${manifest}" --target systemd-user)
+# The example manifest assumes the repo lives at ~/git/util-repos/windshield; point it at this checkout.
+rendered="$(mktemp --suffix=.toml)"
+trap 'rm -f "${rendered}"' EXIT
+sed "s#%h/git/util-repos/windshield#${repo_dir}#g; s#\$HOME/git/util-repos/windshield#${repo_dir}#g" "${manifest}" > "${rendered}"
+
+(cd "${clockwork_dir}" && python3 -m clockwork install --manifest "${rendered}" --target systemd-user)
 systemctl --user daemon-reload
 systemctl --user enable --now windshield-playwright-rotate.timer
 echo "Installed. Next run:"

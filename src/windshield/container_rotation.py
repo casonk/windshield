@@ -27,7 +27,7 @@ import sys
 import time
 import urllib.request
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -57,15 +57,18 @@ class Plan:
     added: tuple[str, ...]
     dropped: tuple[str, ...]
     node_changed: bool
+    patched: tuple[tuple[str, str], ...] = ()  # (old, new) patch releases of served minors
+    refresh: str = ""  # token of changed base-image digests (security/OS/Node patch layers)
 
     @property
     def changed(self) -> bool:
-        return bool(self.added or self.dropped or self.node_changed)
+        return bool(self.added or self.dropped or self.node_changed or self.patched or self.refresh)
 
     @property
     def key(self) -> str:
         """Identity of this plan, used to avoid retrying a change that already failed."""
-        return f"{' '.join(self.versions)}|node{self.node_major}"
+        suffix = f"|refresh-{self.refresh}" if self.refresh else ""
+        return f"{' '.join(self.versions)}|node{self.node_major}{suffix}"
 
 
 def plan_rotation(
@@ -80,16 +83,31 @@ def plan_rotation(
     served = sorted(current, key=version_key)
     newest_minor = minor_of(served[-1]) if served else (0, 0)
     latest_patch: dict[tuple[int, int], str] = {}
+    newest_of_minor: dict[tuple[int, int], str] = {}
     for version in available:
         if not _STABLE.match(version):
             continue
         minor = minor_of(version)
+        if minor not in newest_of_minor or version_key(version) > version_key(
+            newest_of_minor[minor]
+        ):
+            newest_of_minor[minor] = version
         if minor > newest_minor and (
             minor not in latest_patch or version_key(version) > version_key(latest_patch[minor])
         ):
             latest_patch[minor] = version
     added = tuple(latest_patch[m] for m in sorted(latest_patch))
-    merged = sorted([*served, *added], key=version_key)
+    # Security/bug-fix patches of minors already served replace the served patch release.
+    patched: list[tuple[str, str]] = []
+    upgraded = []
+    for version in served:
+        newest = newest_of_minor.get(minor_of(version))
+        if newest is not None and version_key(newest) > version_key(version):
+            patched.append((version, newest))
+            upgraded.append(newest)
+        else:
+            upgraded.append(version)
+    merged = sorted([*upgraded, *added], key=version_key)
     dropped: tuple[str, ...] = ()
     if added and len(merged) > window:
         dropped = tuple(merged[: len(merged) - window])
@@ -97,7 +115,7 @@ def plan_rotation(
     node = current_node
     if latest_node_lts is not None and latest_node_lts > current_node:
         node = latest_node_lts
-    return Plan(tuple(merged), node, added, dropped, node != current_node)
+    return Plan(tuple(merged), node, added, dropped, node != current_node, tuple(patched))
 
 
 # -- registries ---------------------------------------------------------------------------
@@ -155,6 +173,7 @@ def _atomic_write(path: Path, text: str) -> None:
 class State:
     versions: list[str]
     node_major: int
+    rev: int = 0  # build revision: distinguishes rebuilds of the same versions (security refresh)
 
 
 def load_state(repo_dir: Path, directory: Path) -> State:
@@ -166,12 +185,14 @@ def load_state(repo_dir: Path, directory: Path) -> State:
         repo_dir / "config" / "node-major.txt"
     )
     node = int(node_lines[0]) if node_lines else DEFAULT_NODE_MAJOR
-    return State(sorted(versions, key=version_key), node)
+    rev_lines = _read_lines(directory / "build-rev.txt")
+    return State(sorted(versions, key=version_key), node, int(rev_lines[0]) if rev_lines else 0)
 
 
 def save_state(directory: Path, state: State) -> None:
     _atomic_write(directory / "versions.txt", "\n".join(state.versions) + "\n")
     _atomic_write(directory / "node-major.txt", f"{state.node_major}\n")
+    _atomic_write(directory / "build-rev.txt", f"{state.rev}\n")
 
 
 def read_status(directory: Path) -> dict[str, Any]:
@@ -211,6 +232,7 @@ def rotate(
     restart_service: bool = True,
     log: Callable[[str], None] = print,
     notify: Callable[[str, str], None] | None = None,
+    digests: Callable[[Sequence[str]], dict[str, str]] | None = None,
 ) -> int:
     """Run one rotation. Returns 0 (nothing to do / promoted / skipped) or 1 (failed)."""
     env = dict(os.environ if env is None else env)
@@ -252,16 +274,26 @@ def rotate(
         latest_node_lts=node_candidate,
         window=window,
     )
+    read_digests = digests or (lambda refs: fetch_digests(runner, env, refs))
+    recorded = status.get("base_digests") or {}
+    observed = read_digests(base_refs(state.versions, state.node_major))
+    token = refresh_token(recorded, observed)
+    if token:
+        plan = replace(plan, refresh=token)
+    if observed and not recorded:
+        write_status(directory, base_digests=observed)  # baseline: what we are running on
     write_status(directory, last_check_error=None, check_failures=0, last_checked_plan=plan.key)
     if not plan.changed:
         log(f"up to date: {' '.join(state.versions)} on node {state.node_major}")
-        if restart_service:
+        if restart_service and not dry_run:
             sync_clients(state.versions, env, alert, log, runner)
         return 0
 
     log(
         f"plan: add {list(plan.added) or '-'}, drop {list(plan.dropped) or '-'}, "
+        f"patch {[f'{a}->{b}' for a, b in plan.patched] or '-'}, "
         f"node {state.node_major} -> {plan.node_major}"
+        + (", base images refreshed" if plan.refresh else "")
     )
     if dry_run:
         return 0
@@ -271,10 +303,12 @@ def rotate(
         if not force and read_status(directory).get("failed_plan") == candidate.key:
             log(f"skipping: this plan already failed; use --force to retry ({candidate.key})")
             return "skipped"
+        rev = state.rev + 1 if candidate.refresh else state.rev
         build_env = {
             **env,
             "WINDSHIELD_PLAYWRIGHT_VERSIONS": " ".join(candidate.versions),
             "WINDSHIELD_NODE_MAJOR": str(candidate.node_major),
+            "WINDSHIELD_BUILD_REV": str(rev),
         }
 
         def fail(reason: str, output: str = "") -> str:
@@ -304,8 +338,9 @@ def rotate(
                 return fail(f"{step} failed", (result.stdout or "") + (result.stderr or ""))
             log(f"{step}: ok")
 
-        previous = State(list(state.versions), state.node_major)
-        save_state(directory, State(list(candidate.versions), candidate.node_major))
+        previous = State(list(state.versions), state.node_major, state.rev)
+        promoted_state = State(list(candidate.versions), candidate.node_major, rev)
+        save_state(directory, promoted_state)
         if restart_service:
             restart = runner(["systemctl", "--user", "restart", SERVICE], env, 120)
             healthy = restart.returncode == 0
@@ -319,6 +354,7 @@ def rotate(
                 runner(["systemctl", "--user", "restart", SERVICE], env, 120)
                 return fail("service unhealthy after promotion; previous versions restored")
 
+        fresh = read_digests(base_refs(candidate.versions, candidate.node_major))
         write_status(
             directory,
             failed_plan=None,
@@ -326,6 +362,7 @@ def rotate(
             failed_output=None,
             promoted=candidate.key,
             promoted_at=time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+            **({"base_digests": fresh} if fresh else {}),
         )
         log(f"promoted: {' '.join(candidate.versions)} on node {candidate.node_major}")
         alert(
@@ -333,12 +370,18 @@ def rotate(
             f"Now serving Playwright {' '.join(candidate.versions)} on Node {candidate.node_major}"
             + (f"; added {', '.join(candidate.added)}" if candidate.added else "")
             + (f"; dropped {', '.join(candidate.dropped)}" if candidate.dropped else "")
+            + (
+                "; patched " + ", ".join(f"{a} -> {b}" for a, b in candidate.patched)
+                if candidate.patched
+                else ""
+            )
+            + ("; base images refreshed (Node/OS security layers)" if candidate.refresh else "")
             + ".",
         )
         prune_images(
             runner,
             env,
-            keep_versions=(previous, State(list(candidate.versions), candidate.node_major)),
+            keep_versions=(previous, promoted_state),
         )
         if restart_service:
             sync_clients(candidate.versions, env, alert, log, runner)
@@ -352,7 +395,15 @@ def rotate(
         return 0
     if plan.node_changed and plan.added:
         # Do not let a Node bump hold back new Playwright versions: retry on the current Node.
-        fallback = Plan(plan.versions, state.node_major, plan.added, plan.dropped, False)
+        fallback = Plan(
+            plan.versions,
+            state.node_major,
+            plan.added,
+            plan.dropped,
+            False,
+            plan.patched,
+            plan.refresh,
+        )
         log(f"retrying without the Node bump (node stays {state.node_major})")
         outcome = attempt(fallback)
         if outcome == "promoted":
@@ -421,7 +472,51 @@ def _alert(env: Mapping[str, str], subject: str, body: str, log: Callable[[str],
 
 
 def _image_tag(state: State) -> str:
-    return f"v{'-'.join(state.versions)}-node{state.node_major}"
+    return f"v{'-'.join(state.versions)}-node{state.node_major}" + (
+        f"-r{state.rev}" if state.rev else ""
+    )
+
+
+def base_refs(versions: Sequence[str], node_major: int) -> list[str]:
+    """The upstream images the container is built from (see ``deploy/container/Containerfile``)."""
+    oldest = sorted(versions, key=version_key)[0]
+    return [
+        f"docker.io/library/node:{node_major}-bookworm-slim",
+        f"mcr.microsoft.com/playwright:v{oldest}-noble",
+    ]
+
+
+def fetch_digests(runner: Runner, env: Mapping[str, str], refs: Sequence[str]) -> dict[str, str]:
+    """Pull each base image and return its current digest (empty for any that can't be read).
+
+    A moved digest means upstream shipped new layers: a Node patch release or an OS
+    security update.
+    """
+    found: dict[str, str] = {}
+    for ref in refs:
+        try:
+            pulled = runner(["podman", "pull", "-q", ref], env, 1800)
+            if pulled.returncode != 0:
+                continue
+            inspected = runner(
+                ["podman", "image", "inspect", ref, "--format", "{{.Digest}}"], env, 60
+            )
+            digest = inspected.stdout.strip()
+            if inspected.returncode == 0 and digest.startswith("sha256:"):
+                found[ref] = digest
+        except Exception:  # pylint: disable=broad-except
+            continue
+    return found
+
+
+def refresh_token(recorded: Mapping[str, str], observed: Mapping[str, str]) -> str:
+    """Non-empty when a base image we built from has changed since it was recorded."""
+    changed = sorted(r for r, d in observed.items() if r in recorded and recorded[r] != d)
+    if not changed:
+        return ""
+    import hashlib
+
+    return hashlib.sha256("|".join(f"{r}={observed[r]}" for r in changed).encode()).hexdigest()[:10]
 
 
 def prune_images(runner: Runner, env: Mapping[str, str], *, keep_versions: Sequence[State]) -> None:

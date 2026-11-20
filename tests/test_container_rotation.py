@@ -111,6 +111,7 @@ def run(
 ) -> tuple[int, list[str]]:
     logs: list[str] = []
     ALERTS.clear()
+    kw.setdefault("digests", lambda refs: {})
     code = rot.rotate(
         repo,
         env={
@@ -340,3 +341,141 @@ class TestSendAlert:
         assert not result["signal"].ok
         assert result["telegram"].ok
         assert "not found" in (result["gmail"].error or "")
+
+
+class TestSecurityPatches:
+    def test_newer_patch_of_a_served_minor_replaces_it(self) -> None:
+        p = rot.plan_rotation(
+            ["1.58.2", "1.60.0", "1.62.1", "1.64.1", "1.65.1"],
+            ["1.58.2", "1.58.3", "1.65.1", "1.65.2", "1.62.1"],
+            current_node=24, latest_node_lts=None,
+        )  # fmt: skip
+        assert p.patched == (("1.58.2", "1.58.3"), ("1.65.1", "1.65.2"))
+        assert p.versions == ("1.58.3", "1.60.0", "1.62.1", "1.64.1", "1.65.2")
+        assert p.changed and not p.added and not p.dropped
+
+    def test_patch_and_new_minor_together(self) -> None:
+        p = rot.plan_rotation(
+            ["1.60.0", "1.62.1", "1.64.1", "1.65.1", "1.65.1"][:4],
+            ["1.60.1", "1.64.1", "1.65.1", "1.66.0"], current_node=24, latest_node_lts=None, window=5,
+        )  # fmt: skip
+        assert p.patched == (("1.60.0", "1.60.1"),) and p.added == ("1.66.0",)
+        assert "1.60.1" in p.versions and "1.66.0" in p.versions and len(p.versions) == 5
+
+    def test_prerelease_patches_are_ignored(self) -> None:
+        p = rot.plan_rotation(
+            ["1.65.1"], ["1.65.1", "1.65.2-beta.1"], current_node=24, latest_node_lts=None
+        )
+        assert not p.changed
+
+    def test_a_new_major_is_rotated_in_like_any_new_minor(self) -> None:
+        p = rot.plan_rotation(
+            ["1.64.1", "1.65.1"], ["1.65.1", "2.0.0"], current_node=24, latest_node_lts=None
+        )
+        assert p.added == ("2.0.0",) and p.versions[-1] == "2.0.0"
+
+    def test_patch_rotation_builds_verifies_promotes_and_alerts(self, repo, tmp_path) -> None:
+        r = FakeRunner()
+        code, _ = run(repo, tmp_path, r, new=("1.58.3",))  # patch of the oldest served minor
+        assert code == 0
+        assert "1.58.3" in saved(tmp_path).versions and "1.58.2" not in saved(tmp_path).versions
+        assert "patched 1.58.2 -> 1.58.3" in ALERTS[0][1]
+
+
+class TestBaseImageRefresh:
+    REFS = ["docker.io/library/node:24-bookworm-slim", "mcr.microsoft.com/playwright:v1.56.1-noble"]
+
+    def test_refs_follow_the_node_pin_and_the_oldest_version(self) -> None:
+        assert rot.base_refs(["1.58.2", "1.65.1"], 24) == [
+            "docker.io/library/node:24-bookworm-slim",
+            "mcr.microsoft.com/playwright:v1.58.2-noble",
+        ]
+
+    def test_token_only_when_a_recorded_digest_moved(self) -> None:
+        old = {"a": "sha256:1", "b": "sha256:2"}
+        assert rot.refresh_token(old, dict(old)) == ""
+        assert rot.refresh_token({}, old) == ""  # nothing recorded: baseline, not a change
+        assert rot.refresh_token(old, {"a": "sha256:1", "b": "sha256:9"})
+        assert rot.refresh_token(old, {"a": "sha256:1"}) == ""  # unreadable is not a change
+
+    def test_first_run_records_a_baseline_and_does_nothing(self, repo, tmp_path) -> None:
+        r = FakeRunner()
+        code, logs = run(
+            repo, tmp_path, r, new=(), digests=lambda refs: {x: "sha256:1" for x in refs}
+        )
+        assert code == 0 and r.calls == []
+        status = rot.read_status(tmp_path / "state" / "playwright")
+        assert set(status["base_digests"]) == set(rot.base_refs(CURRENT, 24))
+
+    def test_a_moved_digest_rebuilds_with_a_new_revision_and_promotes(self, repo, tmp_path) -> None:
+        refs = rot.base_refs(CURRENT, 24)
+        rot.write_status(
+            tmp_path / "state" / "playwright", base_digests={x: "sha256:old" for x in refs}
+        )
+        seen = []
+
+        class Spy(FakeRunner):
+            def __call__(self, cmd, env, timeout):
+                if cmd[-1] in {"build", "verify"}:
+                    seen.append(env["WINDSHIELD_BUILD_REV"])
+                return super().__call__(cmd, env, timeout)
+
+        code, logs = run(
+            repo, tmp_path, Spy(), new=(), digests=lambda refs: {x: "sha256:new" for x in refs}
+        )
+        assert code == 0 and seen == ["1", "1"]
+        assert saved(tmp_path).rev == 1 and saved(tmp_path).versions == CURRENT
+        assert "base images refreshed" in ALERTS[0][1]
+        status = rot.read_status(tmp_path / "state" / "playwright")
+        assert set(status["base_digests"].values()) == {"sha256:new"}
+        # nothing moved since: the next run is quiet
+        quiet = FakeRunner()
+        code, logs = run(
+            repo, tmp_path, quiet, new=(), digests=lambda refs: {x: "sha256:new" for x in refs}
+        )
+        assert code == 0 and quiet.calls == [] and "up to date" in logs[-1]
+
+    def test_a_failed_refresh_is_alerted_once_and_not_retried(self, repo, tmp_path) -> None:
+        refs = rot.base_refs(CURRENT, 24)
+        rot.write_status(
+            tmp_path / "state" / "playwright", base_digests={x: "sha256:old" for x in refs}
+        )
+        moved = lambda r: {x: "sha256:new" for x in r}  # noqa: E731
+        assert run(repo, tmp_path, FakeRunner(fail="verify"), new=(), digests=moved)[0] == 1
+        assert [a[0] for a in ALERTS] == ["windshield-playwright: rotation failed"]
+        again = FakeRunner()
+        assert run(repo, tmp_path, again, new=(), digests=moved)[0] == 0 and again.calls == []
+
+    def test_image_tag_carries_the_revision_only_when_nonzero(self) -> None:
+        assert rot._image_tag(rot.State(["1.65.1"], 24)) == "v1.65.1-node24"
+        assert rot._image_tag(rot.State(["1.65.1"], 24, 3)) == "v1.65.1-node24-r3"
+
+    def test_digest_fetch_reads_podman_and_tolerates_failures(self) -> None:
+        def runner(cmd, env, timeout):
+            if cmd[1] == "pull":
+                return subprocess.CompletedProcess(cmd, 1 if "bad" in cmd[-1] else 0, "", "")
+            return subprocess.CompletedProcess(cmd, 0, "sha256:abc\n", "")
+
+        got = rot.fetch_digests(runner, {}, ["good:1", "bad:1"])
+        assert got == {"good:1": "sha256:abc"}
+
+
+def test_dry_run_never_touches_consumers(repo, tmp_path) -> None:
+    consumers = tmp_path / "c.txt"
+    consumers.write_text("/some/python\n")
+    r = FakeRunner()
+    code = rot.rotate(
+        repo,
+        env={
+            "WINDSHIELD_STATE_DIR": str(tmp_path / "state"),
+            "WINDSHIELD_CONSUMERS_FILE": str(consumers),
+        },
+        fetch_versions=lambda: list(CURRENT),
+        fetch_node=lambda: 24,
+        runner=r,
+        log=lambda _m: None,
+        notify=lambda *_a: None,
+        digests=lambda refs: {},
+        dry_run=True,
+    )
+    assert code == 0 and r.calls == []

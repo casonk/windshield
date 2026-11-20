@@ -44,7 +44,9 @@ class TestMatrix:
             return done(cmd, out="chromium 159")
 
         env = {"WINDSHIELD_STATE_DIR": str(tmp_path)}
-        results = matrix.run_matrix(VERSIONS[:5], "ws://127.0.0.1:3900", size=3, env=env, runner=runner)
+        results = matrix.run_matrix(
+            VERSIONS[:5], "ws://127.0.0.1:3900", size=3, env=env, runner=runner
+        )
         assert [r.version for r in results] == ["1.62.1", "1.64.1", "1.65.1"]
         assert all(r.ok for r in results)
         endpoints = [c[-1] for c in calls if c[-1].startswith("ws://")]
@@ -64,7 +66,10 @@ class TestMatrix:
             return done(cmd, out="ok")
 
         results = matrix.run_matrix(
-            ["1.62.1", "1.64.1", "1.65.1"], "ws://x:1", env={"WINDSHIELD_STATE_DIR": str(tmp_path)}, runner=runner
+            ["1.62.1", "1.64.1", "1.65.1"],
+            "ws://x:1",
+            env={"WINDSHIELD_STATE_DIR": str(tmp_path)},
+            runner=runner,
         )
         assert [r.ok for r in results] == [False, True, True]
         assert "mismatch" in results[0].detail
@@ -77,7 +82,9 @@ class TestMatrix:
                 return done(cmd)
             return done(cmd, 1, err="no matching distribution")
 
-        r = matrix.check_version("1.65.1", "ws://x:1", {"WINDSHIELD_STATE_DIR": str(tmp_path)}, runner)
+        r = matrix.check_version(
+            "1.65.1", "ws://x:1", {"WINDSHIELD_STATE_DIR": str(tmp_path)}, runner
+        )
         assert not r.ok and "pip install failed" in r.detail
 
 
@@ -107,7 +114,9 @@ class FakeConsumer:
 class TestBump:
     def test_behind_interpreters_are_bumped_and_current_ones_left_alone(self) -> None:
         r = FakeConsumer({"/sys/python": "1.58.0", "/x/venv-python": "1.65.1"})
-        out = bump.bump_clients("1.65.1", interpreters=["/sys/python", "/x/venv-python"], runner=r, log=lambda _m: None)
+        out = bump.bump_clients(
+            "1.65.1", interpreters=["/sys/python", "/x/venv-python"], runner=r, log=lambda _m: None
+        )
         assert [b.status for b in out] == ["bumped", "current"]
         assert r.installs == [("/sys/python", "1.65.*", True)]  # system python gets --user
 
@@ -132,13 +141,18 @@ class TestBump:
         assert out[0].status == "failed" and r.versions["/p"] == "1.64.1"
 
     def test_interpreter_without_playwright_is_skipped(self) -> None:
-        out = bump.bump_clients("1.65.1", interpreters=["/none"], runner=FakeConsumer({}), log=lambda _m: None)
+        out = bump.bump_clients(
+            "1.65.1", interpreters=["/none"], runner=FakeConsumer({}), log=lambda _m: None
+        )
         assert out[0].status == "skipped"
 
     def test_consumers_file_parsing(self, tmp_path: Path) -> None:
         f = tmp_path / "c.txt"
         f.write_text("# comment\n/a/python\n\n/b/python  # trailing\n/a/python\n")
-        assert bump.read_consumers({"WINDSHIELD_CONSUMERS_FILE": str(f)}) == ["/a/python", "/b/python"]
+        assert bump.read_consumers({"WINDSHIELD_CONSUMERS_FILE": str(f)}) == [
+            "/a/python",
+            "/b/python",
+        ]
         assert bump.read_consumers({"WINDSHIELD_CONSUMERS_FILE": str(tmp_path / "no")}) == []
 
 
@@ -148,18 +162,33 @@ class TestRotationWiring:
         f.write_text("/p\n")
         env = {"WINDSHIELD_CONSUMERS_FILE": str(f)}
         sent: list[tuple[str, str]] = []
-        rot.sync_clients(["1.64.1", "1.65.1"], env, lambda s, b: sent.append((s, b)), lambda _m: None,
-                         FakeConsumer({"/p": "1.64.1"}))
+        rot.sync_clients(
+            ["1.64.1", "1.65.1"],
+            env,
+            lambda s, b: sent.append((s, b)),
+            lambda _m: None,
+            FakeConsumer({"/p": "1.64.1"}),
+        )
         assert sent[0][0].endswith("clients updated") and "1.64.1 -> 1.65.1" in sent[0][1]
         sent.clear()
-        rot.sync_clients(["1.64.1", "1.65.1"], env, lambda s, b: sent.append((s, b)), lambda _m: None,
-                         FakeConsumer({"/p": "1.64.1"}, smoke_ok=False))
+        rot.sync_clients(
+            ["1.64.1", "1.65.1"],
+            env,
+            lambda s, b: sent.append((s, b)),
+            lambda _m: None,
+            FakeConsumer({"/p": "1.64.1"}, smoke_ok=False),
+        )
         assert sent[0][0].endswith("client bump failed")
 
     def test_sync_is_quiet_when_nothing_is_behind(self, tmp_path: Path) -> None:
         f = tmp_path / "c.txt"
         f.write_text("/p\n")
         sent: list = []
-        rot.sync_clients(["1.65.1"], {"WINDSHIELD_CONSUMERS_FILE": str(f)}, lambda s, b: sent.append(s),
-                         lambda _m: None, FakeConsumer({"/p": "1.65.1"}))
+        rot.sync_clients(
+            ["1.65.1"],
+            {"WINDSHIELD_CONSUMERS_FILE": str(f)},
+            lambda s, b: sent.append(s),
+            lambda _m: None,
+            FakeConsumer({"/p": "1.65.1"}),
+        )
         assert sent == []

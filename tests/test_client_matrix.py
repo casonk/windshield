@@ -45,7 +45,7 @@ class TestMatrix:
 
         env = {"WINDSHIELD_STATE_DIR": str(tmp_path)}
         results = matrix.run_matrix(
-            VERSIONS[:5], "ws://127.0.0.1:3900", size=3, env=env, runner=runner
+            VERSIONS[:5], "ws://127.0.0.1:3900", size=3, env=env, runner=runner, pythons=["host"]
         )
         assert [r.version for r in results] == ["1.62.1", "1.64.1", "1.65.1"]
         assert all(r.ok for r in results)
@@ -70,6 +70,7 @@ class TestMatrix:
             "ws://x:1",
             env={"WINDSHIELD_STATE_DIR": str(tmp_path)},
             runner=runner,
+            pythons=["host"],
         )
         assert [r.ok for r in results] == [False, True, True]
         assert "mismatch" in results[0].detail
@@ -192,3 +193,88 @@ class TestRotationWiring:
             FakeConsumer({"/p": "1.65.1"}),
         )
         assert sent == []
+
+
+CYCLES = [
+    {"cycle": "3.16", "releaseDate": "2027-10-01", "eol": "2032-10-31"},  # not released yet
+    {"cycle": "3.15", "releaseDate": "2026-10-01", "eol": "2031-10-31"},
+    {"cycle": "3.14", "releaseDate": "2025-10-07", "eol": "2030-10-31"},
+    {"cycle": "3.13", "releaseDate": "2024-10-07", "eol": "2029-10-31"},
+    {"cycle": "3.12", "releaseDate": "2023-10-02", "eol": "2028-10-31"},
+    {"cycle": "3.8", "releaseDate": "2019-10-14", "eol": "2024-10-07"},  # end of life
+    {"cycle": "2.7", "releaseDate": "2010-07-03", "eol": "2020-01-01"},
+]
+
+
+class TestPythonAxis:
+    def test_latest_three_released_supported_minors_oldest_first(self) -> None:
+        from datetime import date
+
+        got = matrix.latest_python_minors({}, lambda: CYCLES, today=date(2026, 11, 20))
+        assert got == ["3.13", "3.14", "3.15"]
+
+    def test_a_new_release_shifts_the_window(self) -> None:
+        from datetime import date
+
+        got = matrix.latest_python_minors({}, lambda: CYCLES, today=date(2027, 11, 1))
+        assert got == ["3.14", "3.15", "3.16"]
+
+    def test_override_and_offline_fallback(self) -> None:
+        assert matrix.latest_python_minors({"WINDSHIELD_PYTHON_VERSIONS": "3.12, 3.13"}) == [
+            "3.12",
+            "3.13",
+        ]
+
+        def offline():
+            raise OSError("no network")
+
+        assert matrix.latest_python_minors({}, offline) == list(matrix.PYTHON_FALLBACK)
+
+    def test_every_playwright_version_runs_on_every_python_in_a_container(
+        self, tmp_path: Path
+    ) -> None:
+        calls: list[list[str]] = []
+
+        def runner(cmd, env, timeout):
+            calls.append(list(cmd))
+            return done(cmd, out="chromium 159")
+
+        results = matrix.run_matrix(
+            ["1.62.1", "1.64.1", "1.65.1"], "ws://127.0.0.1:3900", size=3,
+            env={"WINDSHIELD_STATE_DIR": str(tmp_path)}, runner=runner, pythons=["3.13", "3.14"],
+        )  # fmt: skip
+        assert len(results) == 6 and all(r.ok for r in results)
+        assert {(r.python, r.version) for r in results} == {
+            (p, v) for p in ("3.13", "3.14") for v in ("1.62.1", "1.64.1", "1.65.1")
+        }
+        pulls = [c for c in calls if c[1] == "pull"]
+        assert {c[-1] for c in pulls} == {
+            "docker.io/library/python:3.13-slim", "docker.io/library/python:3.14-slim"
+        }  # fmt: skip
+        builds = [c for c in calls if c[1] == "build"]
+        assert {c[c.index("-t") + 1] for c in builds} == {
+            "localhost/windshield-matrix-python:3.13", "localhost/windshield-matrix-python:3.14"
+        }  # fmt: skip
+        assert (
+            "libatomic1"
+            in (tmp_path / "playwright" / "matrix-images" / "Containerfile.3.13").read_text()
+        )
+        run = next(
+            c for c in calls if "localhost/windshield-matrix-python:3.13" in c and c[1] == "run"
+        )
+        assert "--network=host" in run and run[run.index("sh") + 1] == "-c"
+        assert "1.62.*" in run or "1.64.*" in run or "1.65.*" in run
+        assert any(a.startswith("ws://127.0.0.1:3900/1.6") for a in run)
+
+    def test_a_failing_cell_is_reported_with_its_python(self, tmp_path: Path) -> None:
+        def runner(cmd, env, timeout):
+            if cmd[1] == "run" and "matrix-python:3.15" in " ".join(cmd):
+                return done(cmd, 1, out="ERROR: no matching distribution")
+            return done(cmd, out="ok")
+
+        results = matrix.run_matrix(
+            ["1.64.1", "1.65.1", "1.62.1"], "ws://x:1", env={"WINDSHIELD_STATE_DIR": str(tmp_path)},
+            runner=runner, pythons=["3.14", "3.15"],
+        )  # fmt: skip
+        failed = [r for r in results if not r.ok]
+        assert failed and all(r.python == "3.15" for r in failed)

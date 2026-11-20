@@ -38,7 +38,14 @@ versions() {
   echo "${raw}" | tr ', ' '\n\n' | grep -v '^$' | sort -V -u | tr '\n' ' ' | sed 's/ $//'
 }
 
-image() { echo "localhost/windshield-playwright:v$(versions | tr ' ' '-')-node$(node_major)"; }
+# Build revision: distinguishes a security rebuild of the same versions (rotation bumps it).
+build_rev() {
+  local r="${WINDSHIELD_BUILD_REV:-}"
+  if [[ -z "${r}" && -f "${state_dir}/build-rev.txt" ]]; then r="$(tr -d '[:space:]' < "${state_dir}/build-rev.txt")"; fi
+  [[ -n "${r}" && "${r}" != 0 ]] && echo "-r${r}" || true
+}
+
+image() { echo "localhost/windshield-playwright:v$(versions | tr ' ' '-')-node$(node_major)$(build_rev)"; }
 
 # Drive a page through every served version, using that version's own client inside the
 # container: proves the router, each server and each browser. Exit 1 on any failure.
@@ -87,7 +94,7 @@ case "${1:-}" in
   build)
     all="$(versions)"
     oldest="${all%% *}"   # oldest base image => Node 24; see the Containerfile
-    "${engine}" build --build-arg "PLAYWRIGHT_BASE=${oldest}" \
+    "${engine}" build --pull=newer --build-arg "PLAYWRIGHT_BASE=${oldest}" \
       --build-arg "PLAYWRIGHT_VERSIONS=${all}" --build-arg "NODE_MAJOR=$(node_major)" -t "$(image)" \
       -f "${repo_dir}/deploy/container/Containerfile" "${repo_dir}/deploy/container"
     ;;

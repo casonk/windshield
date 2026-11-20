@@ -172,6 +172,13 @@ by hand.
   **Why consumers are not pinned:** repos leave `playwright` unpinned on purpose. The rotation
   bump owns the client version and the container serves a window of versions, so a pin would
   only fight the automation and create a PR per release.
+  **Security patches:** the same check also replaces a served Playwright minor with its newer
+  patch release, and watches the digests of the Node and Playwright base images; when upstream
+  ships new layers (a Node patch, OS security fixes) the image is rebuilt with `--pull=newer`
+  under a new build revision (`...-node24-r1`), verified, promoted and the old image kept for
+  rollback. A client matrix then covers Playwright versions x the latest three CPython releases
+  (containers; set `WINDSHIELD_PYTHON_VERSIONS` to pin them). Note for slim containers:
+  Playwright 1.65's bundled driver needs `libatomic1`.
   Rotation state lives in `~/.local/state/windshield/playwright/`
   (`versions.txt`, `node-major.txt`, `rotation.json`); `config/` holds only the seed.
   Node is pinned and copied into the image (`config/node-major.txt`), never inherited

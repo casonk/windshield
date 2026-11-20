@@ -10,6 +10,7 @@ Mark items `[x]` when complete and move them to Done.
 
 ## Pending
 
+- [ ] [codecov:2026-11-18] **Raise patch coverage on PR #32: 96.1539% patched, 3 changed lines have no test coverage.** Files: src/windshield/remote.py (2 missing, 97.29%), src/windshield/adapters/_factory.py (1 missing, 75%). Add tests for the uncovered lines. (codecov-pr:32, https://github.com/casonk/windshield/pull/32#issuecomment-6974887060)
 - [ ] [manual:2026-10-15] **Ask GitHub Support to purge pre-rewrite commits** — this
   repository's published history was rewritten (most recently on 2026-10-15,
   to remove per-commit AI attribution trailers). GitHub keeps serving the old

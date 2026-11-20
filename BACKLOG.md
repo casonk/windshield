@@ -10,6 +10,7 @@ Mark items `[x]` when complete and move them to Done.
 
 ## Pending
 
+- [ ] [codecov:2026-11-20] **Raise patch coverage on PR #49: 90.3704% patched, 13 changed lines have no test coverage.** Files: src/windshield/client_matrix.py (11 missing, 84.93%), src/windshield/container_rotation.py (2 missing, 96.77%). Add tests for the uncovered lines. (codecov-pr:49, https://github.com/casonk/windshield/pull/49#issuecomment-7045401852)
 - [ ] [codecov:2026-11-18] **Raise patch coverage on PR #32: 96.1539% patched, 3 changed lines have no test coverage.** Files: src/windshield/remote.py (2 missing, 97.29%), src/windshield/adapters/_factory.py (1 missing, 75%). Add tests for the uncovered lines. (codecov-pr:32, https://github.com/casonk/windshield/pull/32#issuecomment-6974887060)
 - [ ] [codecov:2026-11-19] **Raise patch coverage on PR #38: 66.6667% patched, 3 changed lines have no test coverage.** Files: src/windshield/remote.py (3 missing, 66.66%). Add tests for the uncovered lines. (codecov-pr:38, https://github.com/casonk/windshield/pull/38#issuecomment-7013079732)
 - [ ] [codecov:2026-11-19] **Raise patch coverage on PR #40: 85.514% patched, 31 changed lines have no test coverage.** Files: src/windshield/container_rotation.py (31 missing, 85.51%). Add tests for the uncovered lines. (codecov-pr:40, https://github.com/casonk/windshield/pull/40#issuecomment-7014522455)

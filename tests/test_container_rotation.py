@@ -113,7 +113,10 @@ def run(
     ALERTS.clear()
     code = rot.rotate(
         repo,
-        env={"WINDSHIELD_STATE_DIR": str(tmp_path / "state")},
+        env={
+            "WINDSHIELD_STATE_DIR": str(tmp_path / "state"),
+            "WINDSHIELD_CONSUMERS_FILE": str(tmp_path / "none.txt"),
+        },
         fetch_versions=lambda: [*CURRENT, *new],
         fetch_node=lambda: lts,
         runner=runner,
@@ -230,7 +233,10 @@ class TestRotate:
         logs: list[str] = []
         code = rot.rotate(
             repo,
-            env={"WINDSHIELD_STATE_DIR": str(tmp_path / "state")},
+            env={
+                "WINDSHIELD_STATE_DIR": str(tmp_path / "state"),
+                "WINDSHIELD_CONSUMERS_FILE": str(tmp_path / "none.txt"),
+            },
             fetch_versions=boom,
             fetch_node=lambda: 24,
             runner=FakeRunner(),
@@ -287,7 +293,10 @@ class TestAlerts:
         def once():
             return rot.rotate(
                 repo,
-                env={"WINDSHIELD_STATE_DIR": str(tmp_path / "state")},
+                env={
+                    "WINDSHIELD_STATE_DIR": str(tmp_path / "state"),
+                    "WINDSHIELD_CONSUMERS_FILE": str(tmp_path / "none.txt"),
+                },
                 fetch_versions=boom,
                 fetch_node=lambda: 24,
                 runner=FakeRunner(),

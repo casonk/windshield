@@ -160,6 +160,11 @@ by hand.
   optional `..._CONFIG` per channel); rotation then messages through shock-relay once per
   failed plan, on rollback, on a rejected Node bump, when version checks fail twice in a
   row, and when a rotation is promoted.
+  **Client matrix and bump:** before promoting, the candidate is also driven with the Python
+  client of each of the last 3-5 served versions (`python -m windshield.client_matrix`;
+  `WINDSHIELD_MATRIX_SIZE`, default 5). List the interpreters that use Playwright in
+  `~/.config/windshield/consumers.txt` (one path per line) and each rotation run moves any
+  that are behind up to the newest served version, restoring and alerting if that fails.
   Rotation state lives in `~/.local/state/windshield/playwright/`
   (`versions.txt`, `node-major.txt`, `rotation.json`); `config/` holds only the seed.
   Node is pinned and copied into the image (`config/node-major.txt`), never inherited

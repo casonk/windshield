@@ -14,6 +14,7 @@ Mark items `[x]` when complete and move them to Done.
 - [ ] [codecov:2026-11-19] **Raise patch coverage on PR #38: 66.6667% patched, 3 changed lines have no test coverage.** Files: src/windshield/remote.py (3 missing, 66.66%). Add tests for the uncovered lines. (codecov-pr:38, https://github.com/casonk/windshield/pull/38#issuecomment-7013079732)
 - [ ] [codecov:2026-11-19] **Raise patch coverage on PR #40: 85.514% patched, 31 changed lines have no test coverage.** Files: src/windshield/container_rotation.py (31 missing, 85.51%). Add tests for the uncovered lines. (codecov-pr:40, https://github.com/casonk/windshield/pull/40#issuecomment-7014522455)
 - [ ] [codecov:2026-11-20] **Raise patch coverage on PR #42: 82.2785% patched, 14 changed lines have no test coverage.** Files: src/windshield/container_rotation.py (9 missing, 62.5%), src/windshield/notify.py (5 missing, 90.9%). Add tests for the uncovered lines. (codecov-pr:42, https://github.com/casonk/windshield/pull/42#issuecomment-7027085660)
+- [ ] [codecov:2026-11-20] **Raise patch coverage on PR #47: 73.3945% patched, 29 changed lines have no test coverage.** Files: src/windshield/consumer_matrix.py (29 missing, 71.84%). Add tests for the uncovered lines. (codecov-pr:47, https://github.com/casonk/windshield/pull/47#issuecomment-7041899037)
 - [ ] [manual:2026-10-15] **Ask GitHub Support to purge pre-rewrite commits** — this
   repository's published history was rewritten (most recently on 2026-10-15,
   to remove per-commit AI attribution trailers). GitHub keeps serving the old

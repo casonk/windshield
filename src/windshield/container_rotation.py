@@ -255,6 +255,8 @@ def rotate(
     write_status(directory, last_check_error=None, check_failures=0, last_checked_plan=plan.key)
     if not plan.changed:
         log(f"up to date: {' '.join(state.versions)} on node {state.node_major}")
+        if restart_service:
+            sync_clients(state.versions, env, alert, log, runner)
         return 0
 
     log(
@@ -293,7 +295,7 @@ def rotate(
                 )
             return "failed"
 
-        for step, timeout in (("build", 3600), ("verify", 900)):
+        for step, timeout in (("build", 3600), ("verify", 1800)):
             try:
                 result = runner([script, step], build_env, timeout)
             except subprocess.TimeoutExpired:
@@ -338,6 +340,8 @@ def rotate(
             env,
             keep_versions=(previous, State(list(candidate.versions), candidate.node_major)),
         )
+        if restart_service:
+            sync_clients(candidate.versions, env, alert, log, runner)
         return "promoted"
 
     fallback_follows = plan.node_changed and bool(plan.added)
@@ -365,6 +369,41 @@ def rotate(
         write_status(directory, node_rejected=plan.node_major)
         log(f"node {plan.node_major} rejected; will wait for a newer LTS")
     return 1
+
+
+def sync_clients(
+    versions: Sequence[str],
+    env: Mapping[str, str],
+    alert: Callable[[str, str], None],
+    log: Callable[[str], None],
+    runner: Runner = _run,
+) -> None:
+    """Bring registered consumers' Python client up to the newest served version."""
+    from windshield.client_bump import bump_clients
+
+    try:
+        target = max(versions, key=version_key)
+        endpoint = f"ws://127.0.0.1:{env.get('WINDSHIELD_PLAYWRIGHT_PORT', '3000')}"
+        results = bump_clients(target, endpoint=endpoint, env=env, runner=runner, log=log)
+    except Exception as exc:  # pylint: disable=broad-except
+        log(f"client bump failed: {type(exc).__name__}: {exc}")
+        return
+    changed = [r for r in results if r.status != "current"]
+    if any(r.status in {"failed", "restored"} for r in changed):
+        alert(
+            "windshield-playwright: client bump failed",
+            "\n".join(
+                f"{r.interpreter}: {r.status} ({r.detail})" for r in changed if r.status != "bumped"
+            )
+            + f"\nTarget was Playwright {target}; affected consumers were left on their previous version.",
+        )
+    elif any(r.status == "bumped" for r in changed):
+        alert(
+            "windshield-playwright: clients updated",
+            "\n".join(
+                f"{r.interpreter}: {r.before} -> {r.after}" for r in changed if r.status == "bumped"
+            ),
+        )
 
 
 def _alert(env: Mapping[str, str], subject: str, body: str, log: Callable[[str], None]) -> None:

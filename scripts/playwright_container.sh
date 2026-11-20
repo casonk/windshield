@@ -114,6 +114,11 @@ case "${1:-}" in
     "${engine}" run -d $(run_args) >/dev/null
     rc=0
     wait_listening && smoke || rc=1
+    # Also drive the server with each recent version's *Python* client (what consumers use).
+    if [[ "${rc}" == 0 && "${WINDSHIELD_VERIFY_CLIENTS:-1}" != 0 ]]; then
+      PYTHONPATH="${repo_dir}/src" "${python_bin}" -m windshield.client_matrix \
+        --endpoint "ws://127.0.0.1:${port}" --versions "$(versions)" || rc=1
+    fi
     "${engine}" rm -f "${name}" >/dev/null 2>&1 || true
     exit "${rc}"
     ;;
